@@ -9,7 +9,7 @@ export class Plugin extends BasePlugin {
   auto_load_config = false
 
   init() {
-    this.reg_command_event<'message', { action: string }>({
+    this.reg_command_event<'message', { args: [string] }>({
       command_name: 'help',
       commander: new Command()
         .description('显示帮助信息')

@@ -17,7 +17,7 @@ export interface PingConfig {
   default_reply: string
 }
 
-//             ↓ 类名固定                   ↓ 传入配置文件的类型
+//           ↓ 类名固定为 Plugin        ↓ 传入配置文件的类型
 export class Plugin extends BasePlugin<PingConfig> {
   // ↓ 需要唯一
   name = 'ping'
@@ -33,36 +33,28 @@ export class Plugin extends BasePlugin<PingConfig> {
   }
 
   init() {
-    this.reg_command_event({
+    // 类型可以不传, 默认第一个参数为 message 第二个参数为any
+    // 如果需要传递,那么
+    // 第一个参数为 end_point 请与设定的 end_point 一致, 如果没有就填 message, 会影响 context 的类型
+    // 第二个参数为 联合类型 如下方所示
+    this.reg_command_event<
+      'message',
+      {
+        params: { reply?: string }
+        args: [string | undefined]
+      }
+    >({
       command_name: 'ping',
       commander: new Command()
         .description('检查Bot是否在线, 并返回指定内容')
-        .argument('[content]', '要回复的内容', this.config.default_reply),
-      callback: async ({ context, args }) => {
-        // this.bot 上挂载了一些常用的发送消息函数, 具体请看 ts 类型提示
-        await this.bot.send_msg(context, convertCQCodeToJSON(args[0]) as SendMessageSegment[], {
-          reply: false,
-          at: false,
-        })
-      },
-    })
-
-    // 可以手动指定类型, 第一个参数为 end_point
-    // 默认为 message 如果有设定请与设定的 end_point 一致, 会影响 context 的类型
-    // 第二个参数为 params 的类型
-    this.reg_command_event<'message', { reply: string }>({
-      command_name: 'ping2',
-      commander: new Command()
-        .description('检查Bot是否在线, 并返回指定内容')
-        .option('-r, --reply <content>', '要回复的内容', this.config.default_reply),
-      callback: async ({ context, params }) => {
+        .option('-r, --reply <content>', '要回复的内容')
+        .argument('[content]', '要回复的内容'),
+      callback: async ({ context, params, args }) => {
         await this.bot.send_msg(
           context,
-          convertCQCodeToJSON(params.reply) as SendMessageSegment[],
-          {
-            reply: false,
-            at: false,
-          },
+          convertCQCodeToJSON(
+            params.reply ?? args[0] ?? this.config.default_reply,
+          ) as SendMessageSegment[],
         )
       },
     })

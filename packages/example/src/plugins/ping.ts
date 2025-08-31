@@ -12,37 +12,31 @@ export class Plugin extends BasePlugin<PingConfig> {
   dependencies = {
     call: '^1.0.0',
   }
+
+  config_name = 'ping_config'
   default_config: PingConfig = {
     default_reply: 'pong',
   }
 
   init() {
-    this.reg_command_event({
+    this.reg_command_event<
+      'message',
+      {
+        params: { reply?: string }
+        args: [string | undefined]
+      }
+    >({
       command_name: 'ping',
       commander: new Command()
         .description('检查Bot是否在线, 并返回指定内容')
-        .argument('[content]', '要回复的内容', this.config.default_reply),
-      callback: async ({ context, args }) => {
-        await this.bot.send_msg(context, convertCQCodeToJSON(args[0]) as SendMessageSegment[], {
-          reply: false,
-          at: false,
-        })
-      },
-    })
-
-    this.reg_command_event<'message', { reply: string }>({
-      command_name: 'ping2',
-      commander: new Command()
-        .description('检查Bot是否在线, 并返回指定内容')
-        .option('-r, --reply <content>', '要回复的内容', this.config.default_reply),
-      callback: async ({ context, params }) => {
+        .option('-r, --reply <content>', '要回复的内容')
+        .argument('[content]', '要回复的内容'),
+      callback: async ({ context, params, args }) => {
         await this.bot.send_msg(
           context,
-          convertCQCodeToJSON(params.reply) as SendMessageSegment[],
-          {
-            reply: false,
-            at: false,
-          },
+          convertCQCodeToJSON(
+            params.reply ?? args[0] ?? this.config.default_reply,
+          ) as SendMessageSegment[],
         )
       },
     })

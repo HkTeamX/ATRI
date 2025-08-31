@@ -1,11 +1,30 @@
 import type { Command } from 'commander'
 
 /**
+ * 非空数组
+ */
+export type NonEmptyArray<T> = [T, ...T[]]
+
+/**
+ * 移除对象中的某个字段
+ */
+export type RemoveField<T, KToRemove extends keyof T> = {
+  [K in keyof T as K extends KToRemove ? never : K]: T[K]
+}
+
+/**
+ * 如果T是never或者undefined，则返回D，否则返回T
+ */
+export type WithDefault<T, D> = [T] extends [never] ? D : T extends undefined ? D : T
+
+/**
  * 获取时间
- * @returns 2023/6/26 09:46:39
  */
 export const get_date_time = (split = '/', split2 = ':') => formatDate(new Date(), split, split2)
 
+/**
+ * 格式化日期
+ */
 export function formatDate(date: Date, split = '/', split2 = ':') {
   const y = date.getFullYear()
   const m = date.getMonth() + 1 // 月份从 0 开始
@@ -44,12 +63,6 @@ export function is_object(value: unknown): value is object {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-export type NonEmptyArray<T> = [T, ...T[]]
-
-export type RemoveField<T, KToRemove extends keyof T> = {
-  [K in keyof T as K extends KToRemove ? never : K]: T[K]
-}
-
 /**
  * 同时循环两个数组
  */
@@ -75,6 +88,10 @@ export function get_command_info(
   return command_info === '' || command_info === 'program' ? fallback : command_info
 }
 
+/**
+ * 性能计时器
+ * 返回一个获取当前时间耗时的函数
+ */
 export function performance_counter() {
   const start_time = performance.now()
   return () => {
