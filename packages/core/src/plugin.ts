@@ -1,8 +1,8 @@
-import type { OptionValues } from 'commander'
 import type { MessageHandler, NCWebsocket, NoticeHandler, RequestHandler } from 'node-napcat-ts'
 import type { ATRI } from './atri.js'
 import type { Bot } from './bot.js'
 import type {
+  CommandContext,
   CommandEvent,
   MessageEvent,
   NoticeEvent,
@@ -33,43 +33,43 @@ export abstract class BasePlugin<TConfig = object> {
 
   abstract init(): void | Promise<void>
 
-  reg_command_event = <T extends keyof MessageHandler, K extends OptionValues>(
-    options: RemoveField<CommandEvent<T, K>, 'plugin_name' | 'type'>,
-  ) => {
+  reg_command_event<T extends keyof MessageHandler, Opts extends CommandContext>(
+    options: RemoveField<CommandEvent<T, Opts>, 'plugin_name' | 'type'>,
+  ) {
     return this.bot.reg_event({
       ...options,
       type: 'command',
       plugin_name: this.name,
-    } as unknown as RegEventOptions)
+    } as RegEventOptions)
   }
 
-  reg_message_event = <T extends keyof MessageHandler>(
+  reg_message_event<T extends keyof MessageHandler>(
     options: RemoveField<MessageEvent<T>, 'plugin_name' | 'type'>,
-  ) => {
+  ) {
     return this.bot.reg_event({
       ...options,
       type: 'message',
       plugin_name: this.name,
-    } as unknown as RegEventOptions)
+    } as RegEventOptions)
   }
 
-  reg_request_event = <T extends keyof RequestHandler>(
+  reg_request_event<T extends keyof RequestHandler>(
     options: RemoveField<RequestEvent<T>, 'plugin_name' | 'type'>,
-  ) => {
+  ) {
     return this.bot.reg_event({
       ...options,
       type: 'request',
       plugin_name: this.name,
-    } as unknown as RegEventOptions)
+    } as RegEventOptions)
   }
 
-  reg_notice_event = <T extends keyof NoticeHandler>(
+  reg_notice_event<T extends keyof NoticeHandler>(
     options: RemoveField<NoticeEvent<T>, 'plugin_name' | 'type'>,
-  ) => {
+  ) {
     return this.bot.reg_event({
       ...options,
       type: 'notice',
       plugin_name: this.name,
-    } as unknown as RegEventOptions)
+    } as RegEventOptions)
   }
 }

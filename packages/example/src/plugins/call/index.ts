@@ -5,9 +5,10 @@ import { Structs, type WSSendParam } from 'node-napcat-ts'
 export class Plugin extends BasePlugin {
   name = 'call'
   version = '1.0.0'
+  auto_load_config = false
 
   init() {
-    this.reg_command_event({
+    this.reg_command_event<'message', { args: [string, string] }>({
       command_name: 'call',
       commander: new Command()
         .description('调用NapCat接口')

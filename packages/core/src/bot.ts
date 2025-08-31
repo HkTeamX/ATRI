@@ -259,7 +259,7 @@ export class Bot {
     raw_message: string,
     command_name: CommandEvent['command_name'],
     command?: Command,
-  ): [0, string, string, OptionValues, string[]] | [1, string] | [2, string] {
+  ): [0, string, string, OptionValues, any[]] | [1, string] | [2, string] {
     // 判断prefix是否满足
     const first_letter = raw_message.charAt(0)
     const prefix = this.config.prefix.find((p) => p === first_letter)
