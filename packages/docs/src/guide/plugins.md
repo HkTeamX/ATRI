@@ -9,12 +9,17 @@
 更多示例可以参考 [example](https://github.com/HkTeamX/ATRI/tree/main/packages/example)
 
 ```ts
-import { BasePlugin } from '@huan_kong/atri'
+import { BasePlugin, type CommandCallback } from '@huan_kong/atri'
 import { Command } from 'commander'
 import { convertCQCodeToJSON, type SendMessageSegment } from 'node-napcat-ts'
 
 export interface PingConfig {
   default_reply: string
+}
+
+export type PingCommandContext = {
+  params: { reply?: string }
+  args: [string | undefined]
 }
 
 //           ↓ 类名固定为 Plugin        ↓ 传入配置文件的类型
@@ -33,17 +38,9 @@ export class Plugin extends BasePlugin<PingConfig> {
   }
 
   init() {
-    // 类型可以不传, 默认第一个参数为 message 第二个参数为any
-    // 如果需要传递,那么
-    // 第一个参数为 end_point 请与设定的 end_point 一致, 如果没有就填 message, 会影响 context 的类型
-    // 第二个参数为 联合类型 如下方所示
-    this.reg_command_event<
-      'message',
-      {
-        params: { reply?: string }
-        args: [string | undefined]
-      }
-    >({
+    // 第一个参数为 定义 callback 中收到的数据
+    this.reg_command_event<PingCommandContext>({
+      end_point: 'message.private',
       command_name: 'ping',
       commander: new Command()
         .description('检查Bot是否在线, 并返回指定内容')
@@ -58,6 +55,37 @@ export class Plugin extends BasePlugin<PingConfig> {
         )
       },
     })
+
+    // callback 也可以使用类中定义的函数
+    //                    ↓ 这里想要也可以传入收到的数据类型, 不过一般可以省略, 默认为 any
+    this.reg_command_event({
+      end_point: 'message.private',
+      command_name: 'ping2',
+      commander: new Command()
+        .description('检查Bot是否在线, 并返回指定内容')
+        .option('-r, --reply <content>', '要回复的内容')
+        .argument('[content]', '要回复的内容'),
+      callback: this.handle_on_ping.bind(this),
+      // 根据自己喜好来
+      // callback: (options) => this.handle_on_ping(options),
+    })
+  }
+
+  /**
+   * 处理 ping 命令
+   */
+  private async handle_on_ping({
+    context,
+    params,
+    args,
+    // ↓ 当然也不止这一个 Message Notice 等也都有
+  }: CommandCallback<PingCommandContext, 'message.private'>) {
+    await this.bot.send_msg(
+      context,
+      convertCQCodeToJSON(
+        params.reply ?? args[0] ?? this.config.default_reply,
+      ) as SendMessageSegment[],
+    )
   }
 }
 ```

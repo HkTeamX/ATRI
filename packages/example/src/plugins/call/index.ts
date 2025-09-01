@@ -8,7 +8,7 @@ export class Plugin extends BasePlugin {
   auto_load_config = false
 
   init() {
-    this.reg_command_event<'message', { args: [string, string] }>({
+    this.reg_command_event<{ args: [string, string] }>({
       command_name: 'call',
       commander: new Command()
         .description('调用NapCat接口')

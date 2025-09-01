@@ -11,6 +11,30 @@ import type {
 } from './reg_event.js'
 import type { RemoveField } from './utils.js'
 
+export type AutoInferCommandEndPoint<Opts extends CommandContext = {}> = {
+  [T in keyof MessageHandler]: RemoveField<CommandEvent<Opts, T>, 'plugin_name' | 'type'> & {
+    end_point: T
+  }
+}[keyof MessageHandler]
+
+export type AutoInferMessageEndPoint = {
+  [T in keyof MessageHandler]: RemoveField<MessageEvent<T>, 'plugin_name' | 'type'> & {
+    end_point: T
+  }
+}[keyof MessageHandler]
+
+export type AutoInferRequestEndPoint = {
+  [T in keyof RequestHandler]: RemoveField<RequestEvent<T>, 'plugin_name' | 'type'> & {
+    end_point: T
+  }
+}[keyof RequestHandler]
+
+export type AutoInferNoticeEndPoint = {
+  [T in keyof NoticeHandler]: RemoveField<NoticeEvent<T>, 'plugin_name' | 'type'> & {
+    end_point: T
+  }
+}[keyof NoticeHandler]
+
 export abstract class BasePlugin<TConfig = object> {
   abstract name: string
   abstract version: string
@@ -33,8 +57,13 @@ export abstract class BasePlugin<TConfig = object> {
 
   abstract init(): void | Promise<void>
 
-  reg_command_event<T extends keyof MessageHandler, Opts extends CommandContext>(
-    options: RemoveField<CommandEvent<T, Opts>, 'plugin_name' | 'type'>,
+  reg_command_event<Opts extends CommandContext = {}>(options: AutoInferCommandEndPoint<Opts>): void
+  /* prettier-ignore */
+  reg_command_event<Opts extends CommandContext = {}>(options: RemoveField<CommandEvent<Opts,'message'>, 'plugin_name' | 'type'>): void
+  reg_command_event<Opts extends CommandContext = {}>(
+    options:
+      | AutoInferCommandEndPoint<Opts>
+      | RemoveField<CommandEvent<Opts, 'message'>, 'plugin_name' | 'type'>,
   ) {
     return this.bot.reg_event({
       ...options,
@@ -43,8 +72,12 @@ export abstract class BasePlugin<TConfig = object> {
     } as RegEventOptions)
   }
 
-  reg_message_event<T extends keyof MessageHandler>(
-    options: RemoveField<MessageEvent<T>, 'plugin_name' | 'type'>,
+  reg_message_event(options: AutoInferMessageEndPoint): void
+  reg_message_event(options: RemoveField<MessageEvent<'message'>, 'plugin_name' | 'type'>): void
+  reg_message_event(
+    options:
+      | AutoInferMessageEndPoint
+      | RemoveField<MessageEvent<'message'>, 'plugin_name' | 'type'>,
   ) {
     return this.bot.reg_event({
       ...options,
@@ -53,8 +86,12 @@ export abstract class BasePlugin<TConfig = object> {
     } as RegEventOptions)
   }
 
-  reg_request_event<T extends keyof RequestHandler>(
-    options: RemoveField<RequestEvent<T>, 'plugin_name' | 'type'>,
+  reg_request_event(options: AutoInferRequestEndPoint): void
+  reg_request_event(options: RemoveField<RequestEvent<'request'>, 'plugin_name' | 'type'>): void
+  reg_request_event(
+    options:
+      | AutoInferRequestEndPoint
+      | RemoveField<RequestEvent<'request'>, 'plugin_name' | 'type'>,
   ) {
     return this.bot.reg_event({
       ...options,
@@ -63,8 +100,10 @@ export abstract class BasePlugin<TConfig = object> {
     } as RegEventOptions)
   }
 
-  reg_notice_event<T extends keyof NoticeHandler>(
-    options: RemoveField<NoticeEvent<T>, 'plugin_name' | 'type'>,
+  reg_notice_event(options: AutoInferNoticeEndPoint): void
+  reg_notice_event(options: RemoveField<NoticeEvent<'notice'>, 'plugin_name' | 'type'>): void
+  reg_notice_event(
+    options: AutoInferNoticeEndPoint | RemoveField<NoticeEvent<'notice'>, 'plugin_name' | 'type'>,
   ) {
     return this.bot.reg_event({
       ...options,
