@@ -13,6 +13,8 @@ export type ATRIConfig = {
   disable_help_plugin?: boolean
   disable_clear_terminal?: boolean
   disable_startup_message?: boolean
+
+  load_this_is_a_cake_plugin?: boolean
 }
 
 export interface WaitingPlugin {
@@ -62,7 +64,9 @@ _____     _/  |_   _______   |__|
     const bot = await Bot.init(config.bot)
 
     const atri = new ATRI(config, bot)
-    if (!config.disable_help_plugin) await atri.load_plugin('help', import.meta.dirname)
+    if (!config.disable_help_plugin) await atri.load_plugin('./plugins/help', import.meta.dirname)
+    if (config.load_this_is_a_cake_plugin)
+      await atri.load_plugin('./plugins/this_is_a_cake', import.meta.dirname)
 
     return atri
   }
@@ -105,14 +109,6 @@ _____     _/  |_   _______   |__|
 
       if (!plugin_variable) {
         this.logger.ERROR(`插件 ${plugin_path} 加载失败, 插件未导出 Plugin 变量`)
-        return 2
-      }
-
-      if (
-        typeof plugin_variable !== 'function' ||
-        !plugin_variable.toString().startsWith('class Plugin extends BasePlugin')
-      ) {
-        this.logger.ERROR(`插件 ${plugin_path} 加载失败, 插件不是有效的类`)
         return 2
       }
 

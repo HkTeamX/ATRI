@@ -1,5 +1,5 @@
-import clc from 'cli-color'
 import util from 'node:util'
+import pc from 'picocolors'
 import { get_date_time, is_object } from './utils.js'
 
 export class Logger {
@@ -12,20 +12,20 @@ export class Logger {
   }
 
   INFO(...messages: unknown[]) {
-    this.print(clc.blue(`[INFO]`), ...messages)
+    this.print(pc.blue(`[INFO]`), ...messages)
   }
 
   SUCCESS(...messages: unknown[]) {
-    this.print(clc.green(`[SUCCESS]`), ...messages)
+    this.print(pc.green(`[SUCCESS]`), ...messages)
   }
 
   ERROR(...messages: unknown[]) {
-    this.print(clc.red(`[ERROR]`), ...messages)
+    this.print(pc.red(`[ERROR]`), ...messages)
   }
 
   DEBUG(...messages: unknown[]) {
     if (!this.debug) return
-    this.print(clc.magenta(`[DEBUG]`), ...messages)
+    this.print(pc.magenta(`[DEBUG]`), ...messages)
   }
 
   private formatMessages = (messages: unknown[]): string[] => {
@@ -46,8 +46,8 @@ export class Logger {
         : message,
     )
 
-    const message = [clc.cyan(`[${get_date_time()}]`)]
-    if (this.prefix) message.push(clc.yellow(`[${this.prefix}]`))
+    const message = [pc.cyan(`[${get_date_time()}]`)]
+    if (this.prefix) message.push(pc.yellow(`[${this.prefix}]`))
     message.push(...this.formatMessages(messages))
 
     console.log(...message)
