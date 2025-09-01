@@ -80,6 +80,9 @@ const ws = new NCWebsocket(
   config.bot.debug,
 )
 // 推荐在ws连接成功后再实例化, 此处省略
+// 请查看 https://node-napcat-ts.huankong.top/guide/how-to-use
+// 实例化 Bot 不会自动进行连接操作, 我们的连接初始化操作在 init 中完成
+// 所以请自行完成这部分逻辑 示例: https://github.com/HkTeamX/ATRI/blob/main/packages/core/src/bot.ts#L172-L219
 const bot = new Bot(config.bot, ws)
 const atri = new ATRI(config, bot)
 ```
