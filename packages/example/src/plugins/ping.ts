@@ -1,9 +1,14 @@
-import { BasePlugin } from '@huan_kong/atri'
+import { BasePlugin, type CommandCallback } from '@huan_kong/atri'
 import { Command } from 'commander'
 import { convertCQCodeToJSON, type SendMessageSegment } from 'node-napcat-ts'
 
 export interface PingConfig {
   default_reply: string
+}
+
+export type PingCommandContext = {
+  params: { reply?: string }
+  args: [string | undefined]
 }
 
 export class Plugin extends BasePlugin<PingConfig> {
@@ -19,26 +24,30 @@ export class Plugin extends BasePlugin<PingConfig> {
   }
 
   init() {
-    this.reg_command_event<
-      'message',
-      {
-        params: { reply?: string }
-        args: [string | undefined]
-      }
-    >({
+    this.reg_command_event({
+      end_point: 'message.private',
       command_name: 'ping',
       commander: new Command()
         .description('检查Bot是否在线, 并返回指定内容')
         .option('-r, --reply <content>', '要回复的内容')
         .argument('[content]', '要回复的内容'),
-      callback: async ({ context, params, args }) => {
-        await this.bot.send_msg(
-          context,
-          convertCQCodeToJSON(
-            params.reply ?? args[0] ?? this.config.default_reply,
-          ) as SendMessageSegment[],
-        )
-      },
+      callback: this.handle_on_ping.bind(this),
     })
+  }
+
+  /**
+   * 处理 ping 命令
+   */
+  private async handle_on_ping({
+    context,
+    params,
+    args,
+  }: CommandCallback<PingCommandContext, 'message.private'>) {
+    await this.bot.send_msg(
+      context,
+      convertCQCodeToJSON(
+        params.reply ?? args[0] ?? this.config.default_reply,
+      ) as SendMessageSegment[],
+    )
   }
 }

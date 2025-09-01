@@ -10,7 +10,10 @@ export interface CommandContext {
   args?: any[]
 }
 
-export interface CommandCallback<T extends keyof MessageHandler, Opts extends CommandContext> {
+export interface CommandCallback<
+  Opts extends CommandContext = {},
+  T extends keyof MessageHandler = 'message',
+> {
   context: MessageHandler[T]
   prefix: string
   command_name: string
@@ -19,12 +22,12 @@ export interface CommandCallback<T extends keyof MessageHandler, Opts extends Co
 }
 
 export interface CommandEvent<
-  T extends keyof MessageHandler = 'message',
   Opts extends CommandContext = {},
+  T extends keyof MessageHandler = 'message',
 > {
   type: 'command'
   end_point?: T
-  callback: (context: CommandCallback<T, Opts>) => CallbackReturnType
+  callback: (context: CommandCallback<Opts, T>) => CallbackReturnType
   plugin_name: string
   command_name: string | RegExp
   commander?: Command
@@ -34,7 +37,7 @@ export interface CommandEvent<
   need_admin?: boolean
 }
 
-export interface MessageCallback<T extends keyof MessageHandler> {
+export interface MessageCallback<T extends keyof MessageHandler = 'message'> {
   context: MessageHandler[T]
 }
 
@@ -49,7 +52,7 @@ export interface MessageEvent<T extends keyof MessageHandler = 'message'> {
   need_admin?: boolean
 }
 
-export interface NoticeCallback<T extends keyof NoticeHandler> {
+export interface NoticeCallback<T extends keyof NoticeHandler = 'notice'> {
   context: NoticeHandler[T]
 }
 
@@ -61,7 +64,7 @@ export interface NoticeEvent<T extends keyof NoticeHandler = 'notice'> {
   priority?: number
 }
 
-export interface RequestCallback<T extends keyof RequestHandler> {
+export interface RequestCallback<T extends keyof RequestHandler = 'request'> {
   context: RequestHandler[T]
 }
 
