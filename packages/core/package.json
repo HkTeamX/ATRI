@@ -1,6 +1,6 @@
 {
   "name": "@huan_kong/atri",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "QQBOT TypeScript framework",
   "author": "huankong233",
   "license": "MIT",
@@ -15,16 +15,13 @@
     "url": "git+https://github.com/HkTeamX/ATRI.git"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "type-check": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "cli-color": "^2.0.4",
     "commander": "^14.0.0",
     "compare-versions": "^6.1.1",
-    "node-napcat-ts": "^0.4.17"
-  },
-  "devDependencies": {
-    "@types/cli-color": "^2.0.6"
+    "node-napcat-ts": "^0.4.17",
+    "picocolors": "^1.1.1"
   }
 }

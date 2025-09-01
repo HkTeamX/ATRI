@@ -1,8 +1,8 @@
 import { Command } from 'commander'
 import { Structs } from 'node-napcat-ts'
-import { BasePlugin } from './plugin.js'
-import type { CommandCallback } from './reg_event.js'
-import { get_command_info } from './utils.js'
+import { BasePlugin } from '../plugin.js'
+import type { CommandCallback } from '../reg_event.js'
+import { get_command_info } from '../utils.js'
 
 export class Plugin extends BasePlugin {
   name = 'help'
