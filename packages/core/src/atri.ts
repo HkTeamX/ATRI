@@ -14,7 +14,7 @@ export type ATRIConfig = {
   disable_clear_terminal?: boolean
   disable_startup_message?: boolean
 
-  load_this_is_a_cake_plugin?: boolean
+  is_the_cake_a_lie?: boolean
 }
 
 export interface WaitingPlugin {
@@ -65,7 +65,7 @@ _____     _/  |_   _______   |__|
 
     const atri = new ATRI(config, bot)
     if (!config.disable_help_plugin) await atri.load_plugin('./plugins/help', import.meta.dirname)
-    if (config.load_this_is_a_cake_plugin)
+    if (config.is_the_cake_a_lie)
       await atri.load_plugin('./plugins/this_is_a_cake', import.meta.dirname)
 
     return atri

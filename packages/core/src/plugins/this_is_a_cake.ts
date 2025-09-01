@@ -23,7 +23,7 @@ export class Plugin extends BasePlugin {
   private async revealTheTruth({ context }: MessageCallback) {
     this.messages.forEach(async (message, index) => {
       setTimeout(async () => {
-        await this.bot.send_msg(context, [message])
+        await this.bot.send_msg(context, [message], { reply: false, at: false })
       }, index * 1000)
     })
   }
