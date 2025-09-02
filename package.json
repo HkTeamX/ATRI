@@ -22,7 +22,8 @@
     "clean:docs": "pnpm --filter @huan_kong/atri-docs run clean",
     "preview": "pnpm preview:docs",
     "preview:docs": "pnpm --filter @huan_kong/atri-docs preview",
-    "CI": "pnpm clean:core && pnpm lint && pnpm type-check && pnpm build:core"
+    "CI": "pnpm clean:core && pnpm lint && pnpm type-check && pnpm build:core",
+    "publish:core": "cd ./packages/core && npm publish"
   },
   "dependencies": {
     "tsup": "^8.5.0",
