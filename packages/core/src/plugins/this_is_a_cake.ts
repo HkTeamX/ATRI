@@ -10,7 +10,7 @@ export class Plugin extends BasePlugin {
   init() {
     this.reg_message_event({
       regexp: /^(the cake is a lie|蛋糕是个谎言)$/i,
-      callback: this.revealTheTruth.bind(this),
+      callback: this.cake_is_a_lie.bind(this),
     })
   }
 
@@ -20,7 +20,7 @@ export class Plugin extends BasePlugin {
     Structs.text('But The Cake Is A Lie'),
   ]
 
-  private async revealTheTruth({ context }: MessageCallback) {
+  private async cake_is_a_lie({ context }: MessageCallback) {
     this.messages.forEach(async (message, index) => {
       setTimeout(async () => {
         await this.bot.send_msg(context, [message], { reply: false, at: false })

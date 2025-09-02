@@ -28,7 +28,7 @@ export class Logger {
     this.print(pc.magenta(`[DEBUG]`), ...messages)
   }
 
-  private formatMessages = (messages: unknown[]): string[] => {
+  private format_messages = (messages: unknown[]): string[] => {
     return messages.map((item) => {
       try {
         return typeof item === 'string' ? JSON.parse(item) : item
@@ -41,14 +41,12 @@ export class Logger {
   private print(...messages: unknown[]) {
     if (typeof messages === 'string') messages = [messages]
     messages = messages.map((message) =>
-      is_object(message) || Array.isArray(message)
-        ? util.inspect(message, { depth: null, colors: true })
-        : message,
+      is_object(message, true) ? util.inspect(message, { depth: null, colors: true }) : message,
     )
 
     const message = [pc.cyan(`[${get_date_time()}]`)]
     if (this.prefix) message.push(pc.yellow(`[${this.prefix}]`))
-    message.push(...this.formatMessages(messages))
+    message.push(...this.format_messages(messages))
 
     console.log(...message)
   }

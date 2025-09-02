@@ -26,7 +26,6 @@ export const shared = defineConfig({
     },
   },
 
-  /* prettier-ignore */
   head: [
     [
       'link',
@@ -34,12 +33,34 @@ export const shared = defineConfig({
         rel: 'icon',
         type: 'image/png',
         sizes: '32x32',
-        href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico'
-      }
+        href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico',
+      },
     ],
-    ['link', {rel: 'icon', type: 'image/png', sizes: '16x16', href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico'}],
-    ['link', {rel: 'apple-touch-icon', sizes: '180x180', href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico'}],
-    ['link', {rel: 'mask-icon', href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico', color: '#5bbad5'}],
+    [
+      'link',
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '16x16',
+        href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'mask-icon',
+        href: 'https://img.huankong.top/i/2022/11/29/6385ef8c7a675.ico',
+        color: '#5bbad5',
+      },
+    ],
     ['meta', { name: 'theme-color', content: '#5f67ee' }],
   ],
 

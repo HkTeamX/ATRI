@@ -1,6 +1,6 @@
 {
   "name": "@huan_kong/atri",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "QQBOT TypeScript framework",
   "author": "huankong233",
   "license": "MIT",
@@ -16,6 +16,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "lint": "eslint",
     "type-check": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {

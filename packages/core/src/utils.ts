@@ -13,27 +13,22 @@ export type RemoveField<T, KToRemove extends keyof T> = {
 }
 
 /**
- * 如果T是never或者undefined，则返回D，否则返回T
- */
-export type WithDefault<T, D> = [T] extends [never] ? D : T extends undefined ? D : T
-
-/**
  * 获取时间
  */
-export const get_date_time = (split = '/', split2 = ':') => formatDate(new Date(), split, split2)
+export const get_date_time = (split = '/', split2 = ':') => format_date(new Date(), split, split2)
 
 /**
  * 格式化日期
  */
-export function formatDate(date: Date, split = '/', split2 = ':') {
-  const y = date.getFullYear()
-  const m = date.getMonth() + 1 // 月份从 0 开始
-  const d = date.getDate()
-  const hh = date.getHours()
-  const mm = date.getMinutes()
-  const ss = date.getSeconds()
+export function format_date(date: Date, split = '/', split2 = ':') {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1 // 月份从 0 开始
+  const day = date.getDate()
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  const seconds = date.getSeconds()
 
-  return [[y, m, d].join(split), [hh, mm, ss].join(split2)].join(' ')
+  return [[year, month, day].join(split), [hours, minutes, seconds].join(split2)].join(' ')
 }
 
 /**
@@ -45,11 +40,11 @@ export function formatDate(date: Date, split = '/', split2 = ':') {
 export function sort_object_array<T extends object>(
   arr: T[],
   property: keyof T,
-  sortType: 'up' | 'down' = 'up',
+  sort_type: 'up' | 'down' = 'up',
 ): T[] {
-  return arr.sort((a, b) => {
-    if (a[property] > b[property]) return sortType === 'up' ? 1 : -1
-    if (a[property] < b[property]) return sortType === 'up' ? -1 : 1
+  return arr.sort((first, second) => {
+    if (first[property] > second[property]) return sort_type === 'up' ? 1 : -1
+    if (first[property] < second[property]) return sort_type === 'up' ? -1 : 1
     return 0
   })
 }
@@ -59,16 +54,16 @@ export function sort_object_array<T extends object>(
  * @param value
  * @returns
  */
-export function is_object(value: unknown): value is object {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
+export function is_object(value: unknown, allow_array = false): value is object {
+  return value !== null && typeof value === 'object' && (!Array.isArray(value) || allow_array)
 }
 
 /**
  * 同时循环两个数组
  */
 export function* zip<T, U>(iter1: T[], iter2: U[]): Generator<[number, T, U]> {
-  const len = Math.max(iter1.length, iter2.length)
-  for (let i = 0; i < len; i++) {
+  const max_length = Math.max(iter1.length, iter2.length)
+  for (let i = 0; i < max_length; i++) {
     yield [i, iter1[i], iter2[i]]
   }
 }
