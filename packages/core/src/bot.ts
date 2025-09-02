@@ -69,11 +69,15 @@ export class Bot {
       for (const event of this.events.message) {
         if (
           end_point.includes(event.end_point ?? 'message') &&
-          (event.need_admin ? is_admin : true) &&
           (event.need_reply ? is_reply : true) &&
           (event.regexp ? event.regexp.test(context.raw_message) : true)
         ) {
           try {
+            if (event.need_admin && !is_admin) {
+              await this.send_msg(context, [Structs.text('你不是咱的管理员哦~')])
+              continue
+            }
+
             const result = await event.callback({ context })
             if (result === 'quit') {
               this.logger.DEBUG(`插件 ${event.plugin_name} 请求提前终止`)
@@ -88,9 +92,13 @@ export class Bot {
       for (const event of this.events.command) {
         if (
           end_point.includes(event.end_point ?? 'message') &&
-          (event.need_admin ? is_admin : true) &&
           (event.need_reply ? is_reply : true)
         ) {
+          if (event.need_admin && !is_admin) {
+            await this.send_msg(context, [Structs.text('你不是咱的管理员哦~')])
+            continue
+          }
+
           const parsed_command = this.parse_command(
             context.raw_message,
             event.command_name,
@@ -289,7 +297,13 @@ export class Bot {
           .exitOverride()
           .parse(command_args, { from: 'user' })
 
-        return [0, prefix, current_command_name, parsed_command.opts(), parsed_command.processedArgs]
+        return [
+          0,
+          prefix,
+          current_command_name,
+          parsed_command.opts(),
+          parsed_command.processedArgs,
+        ]
       } catch (error) {
         if (error instanceof CommanderError) {
           if (error.code === 'commander.helpDisplayed') {
@@ -323,14 +337,23 @@ export class Bot {
 
   get_command_help_information(command_name: string) {
     // 搜索命令
-    const found_event = this.events.command.find((cmd) => cmd.command_name.toString() === command_name)
+    const found_event = this.events.command.find(
+      (cmd) => cmd.command_name.toString() === command_name,
+    )
     if (!found_event || !found_event.commander) return undefined
 
-    const resolved_command_name = get_command_info(found_event.commander, found_event.command_name.toString())
+    const resolved_command_name = get_command_info(
+      found_event.commander,
+      found_event.command_name.toString(),
+    )
     const default_prefix = this.config.prefix[0]
 
     const help_information = found_event.commander
-      .name(resolved_command_name.includes(default_prefix) ? resolved_command_name : `${default_prefix}${resolved_command_name}`)
+      .name(
+        resolved_command_name.includes(default_prefix)
+          ? resolved_command_name
+          : `${default_prefix}${resolved_command_name}`,
+      )
       .helpOption('-h, --help', '展示帮助信息')
       .helpInformation()
       .replace('default:', '默认值:')
