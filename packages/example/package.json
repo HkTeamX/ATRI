@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon",
     "start": "tsx ./src/index.ts",
+    "lint": "eslint",
     "type-check": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {

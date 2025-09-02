@@ -1,4 +1,4 @@
-import { CommanderError, type Command, type OptionValues } from 'commander'
+import { CommanderError, type Command } from 'commander'
 import type { NCWebsocketOptions, NodeSegment, SendMessageSegment } from 'node-napcat-ts'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
 import process from 'node:process'
@@ -7,6 +7,8 @@ import type {
   CommandEvent,
   MessageEvent,
   NoticeEvent,
+  OptionArgs,
+  OptionParams,
   RegEventOptions,
   RequestEvent,
 } from './reg_event.js'
@@ -95,15 +97,15 @@ export class Bot {
             event.commander,
           )
 
-          const ret = parsed_command[0]
-          if (ret === 1) continue
-          if (ret === 2) {
+          const parse_result = parsed_command[0]
+          if (parse_result === 1) continue
+          if (parse_result === 2) {
             await this.send_msg(context, [Structs.text(parsed_command[1])])
             continue
           }
 
           // 处理成功事件
-          const [_, prefix, command_name, params, args] = parsed_command
+          const [_success_code, prefix, command_name, params, args] = parsed_command
           try {
             const result = await event.callback({
               context,
@@ -259,23 +261,23 @@ export class Bot {
     raw_message: string,
     command_name: CommandEvent['command_name'],
     command?: Command,
-  ): [0, string, string, OptionValues, any[]] | [1, string] | [2, string] {
+  ): [0, string, string, OptionParams, OptionArgs] | [1, string] | [2, string] {
     // 判断prefix是否满足
     const first_letter = raw_message.charAt(0)
     const prefix = this.config.prefix.find((p) => p === first_letter)
     if (!prefix) return [1, '未匹配到前缀']
 
-    const arr = raw_message.split(' ')
-    if (arr.length === 0) return [1, '命令信息未空']
+    const message_parts = raw_message.split(' ')
+    if (message_parts.length === 0) return [1, '命令信息未空']
 
-    const now_command_name = arr[0].slice(prefix.length)
-    const now_params = arr.slice(1).filter((v) => v !== '')
+    const current_command_name = message_parts[0].slice(prefix.length)
+    const command_args = message_parts.slice(1).filter((arg) => arg !== '')
 
     // 检查命令名是否匹配
     if (
       command_name !== '*' &&
-      ((typeof command_name === 'string' && command_name !== now_command_name) ||
-        (command_name instanceof RegExp && now_command_name.match(command_name) === null))
+      ((typeof command_name === 'string' && command_name !== current_command_name) ||
+        (command_name instanceof RegExp && current_command_name.match(command_name) === null))
     ) {
       return [1, '命令名不匹配']
     }
@@ -285,9 +287,9 @@ export class Bot {
         const parsed_command = command
           .configureOutput({ writeErr: () => {}, writeOut: () => {} })
           .exitOverride()
-          .parse(now_params, { from: 'user' })
+          .parse(command_args, { from: 'user' })
 
-        return [0, prefix, now_command_name, parsed_command.opts(), parsed_command.processedArgs]
+        return [0, prefix, current_command_name, parsed_command.opts(), parsed_command.processedArgs]
       } catch (error) {
         if (error instanceof CommanderError) {
           if (error.code === 'commander.helpDisplayed') {
@@ -316,19 +318,19 @@ export class Bot {
       }
     }
 
-    return [0, prefix, now_command_name, {}, []]
+    return [0, prefix, current_command_name, {}, []]
   }
 
   get_command_help_information(command_name: string) {
     // 搜索命令
-    const event = this.events.command.find((cmd) => cmd.command_name.toString() === command_name)
-    if (!event || !event.commander) return undefined
+    const found_event = this.events.command.find((cmd) => cmd.command_name.toString() === command_name)
+    if (!found_event || !found_event.commander) return undefined
 
-    const now_command_name = get_command_info(event.commander, event.command_name.toString())
-    const prefix = this.config.prefix[0]
+    const resolved_command_name = get_command_info(found_event.commander, found_event.command_name.toString())
+    const default_prefix = this.config.prefix[0]
 
-    const help_information = event.commander
-      .name(now_command_name.includes(prefix) ? now_command_name : `${prefix}${now_command_name}`)
+    const help_information = found_event.commander
+      .name(resolved_command_name.includes(default_prefix) ? resolved_command_name : `${default_prefix}${resolved_command_name}`)
       .helpOption('-h, --help', '展示帮助信息')
       .helpInformation()
       .replace('default:', '默认值:')

@@ -1,33 +1,37 @@
-import type { Command, OptionValues } from 'commander'
+import type { Command } from 'commander'
 import type { MessageHandler, NoticeHandler, RequestHandler } from 'node-napcat-ts'
-import type { WithDefault } from './utils.js'
 
-export type _CallbackReturnType = void | 'quit'
-export type CallbackReturnType = Promise<_CallbackReturnType> | _CallbackReturnType
+export type CallbackReturnType = void | 'quit'
+export type CallbackReturn = Promise<CallbackReturnType> | CallbackReturnType
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type OptionParams = Record<string, any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type OptionArgs = any[]
 
 export interface CommandContext {
-  params?: OptionValues
-  args?: any[]
+  params?: OptionParams
+  args?: OptionArgs
 }
 
 export interface CommandCallback<
-  Opts extends CommandContext = {},
+  Opts extends CommandContext = CommandContext,
   T extends keyof MessageHandler = 'message',
 > {
   context: MessageHandler[T]
   prefix: string
   command_name: string
-  params: WithDefault<Opts['params'], object>
-  args: WithDefault<Opts['args'], any[]>
+  params: Opts['params']
+  args: Opts['args']
 }
 
 export interface CommandEvent<
-  Opts extends CommandContext = {},
+  Opts extends CommandContext = CommandContext,
   T extends keyof MessageHandler = 'message',
 > {
   type: 'command'
   end_point?: T
-  callback: (context: CommandCallback<Opts, T>) => CallbackReturnType
+  callback: (context: CommandCallback<Opts, T>) => CallbackReturn
   plugin_name: string
   command_name: string | RegExp
   commander?: Command
@@ -45,7 +49,7 @@ export interface MessageEvent<T extends keyof MessageHandler = 'message'> {
   type: 'message'
   end_point?: T
   regexp?: RegExp
-  callback: (context: MessageCallback<T>) => CallbackReturnType
+  callback: (context: MessageCallback<T>) => CallbackReturn
   plugin_name: string
   priority?: number
   need_reply?: boolean
@@ -59,7 +63,7 @@ export interface NoticeCallback<T extends keyof NoticeHandler = 'notice'> {
 export interface NoticeEvent<T extends keyof NoticeHandler = 'notice'> {
   type: 'notice'
   end_point?: T
-  callback: (context: NoticeCallback<T>) => CallbackReturnType
+  callback: (context: NoticeCallback<T>) => CallbackReturn
   plugin_name: string
   priority?: number
 }
@@ -71,7 +75,7 @@ export interface RequestCallback<T extends keyof RequestHandler = 'request'> {
 export interface RequestEvent<T extends keyof RequestHandler = 'request'> {
   type: 'request'
   end_point?: T
-  callback: (context: RequestCallback<T>) => CallbackReturnType
+  callback: (context: RequestCallback<T>) => CallbackReturn
   plugin_name: string
   priority?: number
 }

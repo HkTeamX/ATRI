@@ -11,7 +11,7 @@ import type {
 } from './reg_event.js'
 import type { RemoveField } from './utils.js'
 
-export type AutoInferCommandEndPoint<Opts extends CommandContext = {}> = {
+export type AutoInferCommandEndPoint<Opts extends CommandContext = CommandContext> = {
   [T in keyof MessageHandler]: RemoveField<CommandEvent<Opts, T>, 'plugin_name' | 'type'> & {
     end_point: T
   }
@@ -57,10 +57,13 @@ export abstract class BasePlugin<TConfig = object> {
 
   abstract init(): void | Promise<void>
 
-  reg_command_event<Opts extends CommandContext = {}>(options: AutoInferCommandEndPoint<Opts>): void
-  /* prettier-ignore */
-  reg_command_event<Opts extends CommandContext = {}>(options: RemoveField<CommandEvent<Opts,'message'>, 'plugin_name' | 'type'>): void
-  reg_command_event<Opts extends CommandContext = {}>(
+  reg_command_event<Opts extends CommandContext = CommandContext>(
+    options: AutoInferCommandEndPoint<Opts>,
+  ): void
+  reg_command_event<Opts extends CommandContext = CommandContext>(
+    options: RemoveField<CommandEvent<Opts, 'message'>, 'plugin_name' | 'type'>,
+  ): void
+  reg_command_event<Opts extends CommandContext = CommandContext>(
     options:
       | AutoInferCommandEndPoint<Opts>
       | RemoveField<CommandEvent<Opts, 'message'>, 'plugin_name' | 'type'>,
