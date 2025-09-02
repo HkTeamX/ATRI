@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon",
-    "start": "tsx ./src/index.ts",
+    "test": "tsx ./src/index.ts",
     "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "type-check": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
