@@ -5,7 +5,9 @@
     "declaration": false,
     "paths": {
       "@/*": ["./src/*"],
-      "@huan_kong/atri": ["../core/src/index.ts"]
+      "@atri-bot/core": ["../core/src/index.ts"],
+      "@atri-bot/plugin-help": ["../atri-plugin-help/src/index.ts"],
+      "@atri-bot/plugin-ping": ["../atri-plugin-ping/src/index.ts"]
     },
     "noEmit": true,
     "allowImportingTsExtensions": true

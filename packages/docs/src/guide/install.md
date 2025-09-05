@@ -9,7 +9,7 @@
 ::: code-group
 
 ```sh [pnpm]
-pnpm add @huan_kong/atri
+pnpm add @atri-bot/core
 ```
 
 :::
@@ -18,6 +18,6 @@ pnpm add @huan_kong/atri
 
 ATRI 是仅 ESM 的软件包。不要使用 `require()` 导入它，并确保最新的 `package.json` 包含 `"type": "module"`，或者更改相关文件的文件扩展名，例如 `config.js` 到 `.mjs`/`.mts`。
 
-此外，在异步 CJS 上下文中，可以使用 `await import('@huan_kong/atri')` 代替。
+此外，在异步 CJS 上下文中，可以使用 `await import('@atri-bot/core')` 代替。
 
 :::

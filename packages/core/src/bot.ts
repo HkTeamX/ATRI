@@ -1,42 +1,11 @@
+import { InjectLogger, Logger, LogLevel } from '@huan_kong/logger'
 import { CommanderError, type Command } from 'commander'
-import type { NCWebsocketOptions, NodeSegment, SendMessageSegment } from 'node-napcat-ts'
-import { NCWebsocket, Structs } from 'node-napcat-ts'
-import process from 'node:process'
-import { Logger } from './logger.js'
-import type {
-  CommandEvent,
-  MessageEvent,
-  NoticeEvent,
-  OptionArgs,
-  OptionParams,
-  RegEventOptions,
-  RequestEvent,
-} from './reg_event.js'
-import {
-  get_command_info,
-  performance_counter,
-  sort_object_array,
-  type NonEmptyArray,
-  type RemoveField,
-} from './utils.js'
+import { NCWebsocket, Structs, type NodeSegment, type SendMessageSegment } from 'node-napcat-ts'
+import type { BotConfig, BotEvents, CommandData } from './types/bot.js'
+import type { CommandEvent, RegEventOptions } from './types/plugin.js'
+import { performanceCounter, sortObjectArray } from './utils.js'
 
-export type BotConfig = {
-  debug?: boolean
-  prefix: NonEmptyArray<string>
-  admin_id: NonEmptyArray<number>
-  connection: RemoveField<NCWebsocketOptions, 'reconnection'>
-  reconnection: NCWebsocketOptions['reconnection']
-}
-
-export interface BotEvents {
-  command: CommandEvent[]
-  message: MessageEvent[]
-  notice: NoticeEvent[]
-  request: RequestEvent[]
-}
-
-export class Bot {
-  logger: Logger
+export class Bot extends InjectLogger {
   ws: NCWebsocket
   config: BotConfig
 
@@ -47,8 +16,8 @@ export class Bot {
     request: [],
   }
 
-  constructor(config: BotConfig, ws: NCWebsocket) {
-    this.logger = new Logger('Bot', config.debug)
+  private constructor(config: BotConfig, ws: NCWebsocket) {
+    super({ level: config.debug ? LogLevel.DEBUG : config.logLevel })
     this.ws = ws
     this.config = config
 
@@ -62,144 +31,139 @@ export class Bot {
     }
 
     ws.on('message', async (context) => {
-      const end_point = `message.${context.message_type}.${context.sub_type}`
-      const is_admin = this.config.admin_id.includes(context.user_id)
-      const is_reply = context.message[0].type === 'reply'
+      const endpoint = `message.${context.message_type}.${context.sub_type}`
+      const isAdmin = this.config.adminId.includes(context.user_id)
+      const isReply = context.message[0].type === 'reply'
 
       for (const event of this.events.message) {
         if (
-          end_point.includes(event.end_point ?? 'message') &&
-          (event.need_reply ? is_reply : true) &&
+          endpoint.includes(event.endPoint ?? 'message') &&
+          (event.needReply ? isReply : true) &&
+          (event.needAdmin ? isAdmin : true) &&
           (event.regexp ? event.regexp.test(context.raw_message) : true)
         ) {
           try {
-            if (event.need_admin && !is_admin) {
-              await this.send_msg(context, [Structs.text('你不是咱的管理员哦~')])
-              continue
-            }
-
             const result = await event.callback({ context })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.plugin_name} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.plugin_name} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
           }
         }
       }
 
       for (const event of this.events.command) {
         if (
-          end_point.includes(event.end_point ?? 'message') &&
-          (event.need_reply ? is_reply : true)
+          endpoint.includes(event.endPoint ?? 'message') &&
+          (event.needAdmin ? isAdmin : true) &&
+          (event.needReply ? isReply : true)
         ) {
-          if (event.need_admin && !is_admin) {
-            await this.send_msg(context, [Structs.text('你不是咱的管理员哦~')])
-            continue
-          }
-
-          const parsed_command = this.parse_command(
+          const [retCode, dataOrMessage] = this.parseCommand(
             context.raw_message,
-            event.command_name,
+            event.commandName,
             event.commander,
           )
 
-          const parse_result = parsed_command[0]
-          if (parse_result === 1) continue
-          if (parse_result === 2) {
-            await this.send_msg(context, [Structs.text(parsed_command[1])])
+          if (retCode === 1) continue
+          if (retCode === 2) {
+            await this.sendMsg(context, [Structs.text(dataOrMessage)])
             continue
           }
 
+          const { prefix, commandName, params, args } = dataOrMessage
+
           // 处理成功事件
-          const [_success_code, prefix, command_name, params, args] = parsed_command
           try {
             const result = await event.callback({
               context,
               prefix,
-              command_name,
+              commandName,
               params,
               args,
             })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.plugin_name} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.plugin_name} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
           }
         }
       }
     })
 
     ws.on('request', async (context) => {
-      const end_point = `request.${context.request_type}.${'sub_type' in context ? context.sub_type : ''}`
+      const endpoint = `request.${context.request_type}.${'sub_type' in context ? context.sub_type : ''}`
 
       for (const event of this.events.request) {
-        if (end_point.includes(event.end_point ?? 'request')) {
+        if (endpoint.includes(event.endPoint ?? 'request')) {
           try {
             const result = await event.callback({ context })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.plugin_name} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.plugin_name} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
           }
         }
       }
     })
 
     ws.on('notice', async (context) => {
-      let end_point = `notice.${context.notice_type}.${'sub_type' in context ? context.sub_type : ''}`
+      let endpoint = `notice.${context.notice_type}.${'sub_type' in context ? context.sub_type : ''}`
       if (context.notice_type === 'notify') {
         if (context.sub_type === 'input_status') {
-          end_point += `.${context.group_id !== 0 ? 'group' : 'friend'}`
+          endpoint += `.${context.group_id !== 0 ? 'group' : 'friend'}`
         } else if (context.sub_type === 'poke') {
-          end_point += `.${'group_id' in context ? 'group' : 'friend'}`
+          endpoint += `.${'group_id' in context ? 'group' : 'friend'}`
         }
       }
 
       for (const event of this.events.notice) {
-        if (end_point.includes(event.end_point ?? 'notice')) {
+        if (endpoint.includes(event.endPoint ?? 'notice')) {
           try {
             const result = await event.callback({ context })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.plugin_name} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.plugin_name} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
           }
         }
       }
     })
 
-    this.logger.SUCCESS(`Bot 初始化完成`)
+    this.logger.INFO(`Bot 初始化完成`)
   }
 
   static async init(config: BotConfig) {
     return new Promise<Bot>((resolve, reject) => {
-      const logger = new Logger('Bot', config.debug)
-      logger.DEBUG(`初始化 Bot 实例`)
-      logger.DEBUG(`配置信息:`, config)
+      const logger = new Logger({
+        title: 'Bot',
+        level: config.debug ? LogLevel.DEBUG : config.logLevel,
+      })
 
       const ws = new NCWebsocket({
         ...config.connection,
         reconnection: config.reconnection,
       })
 
-      let get_elapsed_time = performance_counter()
+      let getElapsedTimeMs = performanceCounter()
 
       ws.on('socket.connecting', (context) => {
-        get_elapsed_time = performance_counter()
-        logger.INFO(`连接中#${context.reconnection.nowAttempts}/${context.reconnection.attempts}`)
+        getElapsedTimeMs = performanceCounter()
+        logger.INFO(
+          `连接中 [#${context.reconnection.nowAttempts}/${context.reconnection.attempts}]`,
+        )
       })
 
       ws.on('socket.error', (context) => {
         logger.ERROR(
-          `连接失败#${context.reconnection.nowAttempts}/${context.reconnection.attempts}`,
+          `连接失败 [#${context.reconnection.nowAttempts}/${context.reconnection.attempts}]`,
         )
         logger.ERROR(`错误信息:`, context)
 
@@ -215,11 +179,10 @@ export class Bot {
       })
 
       ws.on('socket.open', async (context) => {
-        logger.SUCCESS(
-          `连接成功#${context.reconnection.nowAttempts}/${context.reconnection.attempts}`,
+        logger.INFO(
+          `连接成功 [#${context.reconnection.nowAttempts}/${context.reconnection.attempts}]`,
         )
-
-        logger.INFO(`连接 NapCat 耗时: ${get_elapsed_time()}ms`)
+        logger.INFO(`连接 NapCat 耗时: ${getElapsedTimeMs()}ms`)
 
         resolve(new Bot(config, ws))
       })
@@ -228,87 +191,93 @@ export class Bot {
     })
   }
 
-  reg_event(_options: RegEventOptions) {
+  /**
+   * 注册事件
+   */
+  regEvent(_options: RegEventOptions) {
     const options = { ..._options, priority: _options.priority ?? 1 }
 
     switch (options.type) {
       case 'command':
-        this.events.command = sort_object_array(
-          [...this.events.command, options],
-          'priority',
-          'down',
-        )
-        break
+        this.events.command = sortObjectArray([...this.events.command, options], 'priority', 'down')
+        return () => {
+          const index = this.events.command.indexOf(options)
+          if (index !== -1) this.events.command.splice(index, 1)
+        }
       case 'message':
-        this.events.message = sort_object_array(
-          [...this.events.message, options],
-          'priority',
-          'down',
-        )
-        break
+        this.events.message = sortObjectArray([...this.events.message, options], 'priority', 'down')
+        return () => {
+          const index = this.events.message.indexOf(options)
+          if (index !== -1) this.events.message.splice(index, 1)
+        }
       case 'notice':
-        this.events.notice = sort_object_array([...this.events.notice, options], 'priority', 'down')
-        break
+        this.events.notice = sortObjectArray([...this.events.notice, options], 'priority', 'down')
+        return () => {
+          const index = this.events.notice.indexOf(options)
+          if (index !== -1) this.events.notice.splice(index, 1)
+        }
       case 'request':
-        this.events.request = sort_object_array(
-          [...this.events.request, options],
-          'priority',
-          'down',
-        )
-        break
+        this.events.request = sortObjectArray([...this.events.request, options], 'priority', 'down')
+        return () => {
+          const index = this.events.request.indexOf(options)
+          if (index !== -1) this.events.request.splice(index, 1)
+        }
     }
   }
 
   /**
    * 解析命令
-   * 0 - 解析成功
-   * 1 - 未匹配命令特征
-   * 2 - 参数不合法
+   * @param rawMessage 原始消息
+   * @param commandName 命令名称
+   * @param command 命令对象
+   * @returns 解析结果
    */
-  parse_command(
-    raw_message: string,
-    command_name: CommandEvent['command_name'],
+  parseCommand(
+    rawMessage: string,
+    commandName: CommandEvent['commandName'],
     command?: Command,
-  ): [0, string, string, OptionParams, OptionArgs] | [1, string] | [2, string] {
+  ): [0, CommandData] | [1, string] | [2, string] {
     // 判断prefix是否满足
-    const first_letter = raw_message.charAt(0)
-    const prefix = this.config.prefix.find((p) => p === first_letter)
+    const firstChar = rawMessage.charAt(0)
+    const prefix = this.config.prefix.find((p) => p === firstChar)
     if (!prefix) return [1, '未匹配到前缀']
 
-    const message_parts = raw_message.split(' ')
-    if (message_parts.length === 0) return [1, '命令信息未空']
+    const parts = rawMessage.split(' ')
+    if (parts.length === 0) return [1, '命令信息未空']
 
-    const current_command_name = message_parts[0].slice(prefix.length)
-    const command_args = message_parts.slice(1).filter((arg) => arg !== '')
+    const cmdName = parts[0].slice(prefix.length)
+    const args = parts.slice(1).filter((arg) => arg !== '')
 
     // 检查命令名是否匹配
     if (
-      command_name !== '*' &&
-      ((typeof command_name === 'string' && command_name !== current_command_name) ||
-        (command_name instanceof RegExp && current_command_name.match(command_name) === null))
+      commandName !== '*' &&
+      ((typeof commandName === 'string' && commandName !== cmdName) ||
+        (commandName instanceof RegExp && cmdName.match(commandName) === null))
     ) {
       return [1, '命令名不匹配']
     }
 
     if (command) {
       try {
-        const parsed_command = command
+        const parsedCommand = command
           .configureOutput({ writeErr: () => {}, writeOut: () => {} })
           .exitOverride()
-          .parse(command_args, { from: 'user' })
+          .parse(args, { from: 'user' })
 
         return [
           0,
-          prefix,
-          current_command_name,
-          parsed_command.opts(),
-          parsed_command.processedArgs,
+          {
+            prefix,
+            commandName: cmdName,
+            params: parsedCommand.opts(),
+            args: parsedCommand.processedArgs,
+          },
         ]
       } catch (error) {
         if (error instanceof CommanderError) {
           if (error.code === 'commander.helpDisplayed') {
-            const help_information = this.get_command_help_information(command_name.toString())
-            return [2, help_information ?? '']
+            const helpInformation = this.getCommandHelpInformation(commandName.toString())
+            return [2, helpInformation ?? '']
           }
 
           error.message = error.message
@@ -327,32 +296,54 @@ export class Bot {
           ]
         } else {
           this.logger.ERROR(error)
-          return [2, '未知错误']
+          return [2, error instanceof Error ? error.message : '未知错误']
         }
       }
     }
 
-    return [0, prefix, current_command_name, {}, []]
+    return [
+      0,
+      {
+        prefix,
+        commandName: cmdName,
+        params: {},
+        args: [],
+      },
+    ]
   }
 
-  get_command_help_information(command_name: string) {
+  /**
+   * 获取命令信息
+   * @param command 命令对象
+   * @param fallback 后备值
+   * @param field 字段名
+   * @returns 命令信息
+   */
+  getCommandInfo(command: Command, fallback: string, field: 'name' | 'description' = 'name') {
+    const commandInfo = command[field]().replace('/', '')
+    return commandInfo === '' || commandInfo === 'program' ? fallback : commandInfo
+  }
+
+  /**
+   * 获取命令帮助信息
+   * @param commandName 命令名称
+   */
+  getCommandHelpInformation(commandName: string) {
     // 搜索命令
-    const found_event = this.events.command.find(
-      (cmd) => cmd.command_name.toString() === command_name,
-    )
-    if (!found_event || !found_event.commander) return undefined
+    const foundEvent = this.events.command.find((cmd) => cmd.commandName.toString() === commandName)
+    if (!foundEvent || !foundEvent.commander) return undefined
 
-    const resolved_command_name = get_command_info(
-      found_event.commander,
-      found_event.command_name.toString(),
+    const resolvedCommandName = this.getCommandInfo(
+      foundEvent.commander,
+      foundEvent.commandName.toString(),
     )
-    const default_prefix = this.config.prefix[0]
+    const defaultPrefix = this.config.prefix[0]
 
-    const help_information = found_event.commander
+    const helpInformation = foundEvent.commander
       .name(
-        resolved_command_name.includes(default_prefix)
-          ? resolved_command_name
-          : `${default_prefix}${resolved_command_name}`,
+        resolvedCommandName.includes(defaultPrefix)
+          ? resolvedCommandName
+          : `${defaultPrefix}${resolvedCommandName}`,
       )
       .helpOption('-h, --help', '展示帮助信息')
       .helpInformation()
@@ -361,13 +352,13 @@ export class Bot {
       .replace('Options:', '选项:')
       .replace('Usage:', '用法:')
 
-    return help_information
+    return helpInformation
   }
 
   /**
    * 发送普通消息
    */
-  async send_msg(
+  async sendMsg(
     context:
       | { message_type: 'private'; user_id: number; message_id?: number }
       | { message_type: 'group'; group_id: number; user_id?: number; message_id?: number },
@@ -394,7 +385,7 @@ export class Bot {
   /**
    * 发送合并转发
    */
-  async send_forward_msg(
+  async sendForwardMsg(
     context:
       | { message_type: 'group'; group_id: number }
       | { message_type: 'private'; user_id: number },
@@ -420,7 +411,7 @@ export class Bot {
   /**
    * 判断是否是机器人的好友
    */
-  async is_friend(context: { user_id: number }) {
+  async isFriend(context: { user_id: number }) {
     return this.ws
       .get_friend_list()
       .then((res) => res.find((value) => value.user_id === context.user_id))
@@ -429,7 +420,7 @@ export class Bot {
   /**
    * 获取用户名
    */
-  async get_username(context: { user_id: number } | { user_id: number; group_id: number }) {
+  async getUsername(context: { user_id: number } | { user_id: number; group_id: number }) {
     if ('group_id' in context) {
       return this.ws
         .get_group_member_info({ group_id: context.group_id, user_id: context.user_id })

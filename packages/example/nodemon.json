@@ -1,5 +1,11 @@
 {
-  "watch": ["./src", "../core/src"],
+  "watch": [
+    "./src",
+    "../core/src",
+    "../atri-plugin-help/src",
+    "../atri-plugin-pluginStore/src",
+    "../atri-plugin-theCakeIsALie/src"
+  ],
   "ext": ".ts",
   "ignore": [],
   "exec": "pnpm run test --debug"

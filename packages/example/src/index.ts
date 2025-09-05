@@ -1,10 +1,8 @@
-import { ATRI, Logger, performance_counter, type BotConfig } from '@huan_kong/atri'
+import { ATRI, type BotConfig, type ImportFunction } from '@atri-bot/core'
 import { config } from 'dotenv'
 import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import path from 'node:path'
 import process from 'node:process'
-
-const get_elapsed_time = performance_counter()
 
 config({
   path: path.join(import.meta.dirname, '../.env'),
@@ -13,12 +11,9 @@ config({
 
 const debug = process.argv.includes('--debug')
 
-const logger = new Logger('KKBot', debug)
-logger.INFO('开始加载 KKBOT')
-
 const bot: BotConfig = {
   prefix: JSON.parse(process.env.PREFIX ?? '["/"]'),
-  admin_id: JSON.parse(process.env.ADMIN_ID ?? '[10001]'),
+  adminId: JSON.parse(process.env.ADMIN_ID ?? '[10001]'),
   connection: {
     protocol: (process.env.NC_PROTOCOL ?? 'ws') as NCWebsocketOptionsHost['protocol'],
     host: process.env.NC_HOST ?? '127.0.0.1',
@@ -35,11 +30,12 @@ const bot: BotConfig = {
 const atri = await ATRI.init({
   bot,
   debug,
-  base_dir: import.meta.dirname,
+  baseDir: import.meta.dirname,
 })
 
-await atri.load_plugins(['./plugins/ping', './plugins/call'])
+const plugins: ImportFunction[] = [
+  () => import('@atri-bot/plugin-ping'),
+  () => import('@atri-bot/plugin-help'),
+]
 
-atri.check_waiting_plugins()
-
-logger.INFO(`KKBOT 加载完成! 总耗时: ${get_elapsed_time()}ms`)
+await Promise.all(plugins.map((plugin) => atri.loadPlugin(plugin)))
