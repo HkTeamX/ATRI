@@ -90,6 +90,17 @@ _____     _/  |_   _______   |__|
         return false
       }
 
+      if (!plugin.pluginVersion) {
+        // 尝试获取版本号
+        try {
+          const pkgPath = this.import.resolve(path.join(pluginName, 'package.json'))
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+          plugin.pluginVersion = pkg.version ?? '未知版本'
+        } catch {
+          plugin.pluginVersion = '未知版本'
+        }
+      }
+
       // 触发加载钩子
       for (const hookName in this.loadPluginHooks) {
         const hook = this.loadPluginHooks[hookName]

@@ -112,6 +112,10 @@ export type AutoInferNoticeEndPoint = {
 }[keyof NoticeHandler]
 
 export abstract class BasePlugin<TConfig extends object = object> {
+  abstract pluginName: string
+  // 构造完成后自动注入
+  pluginVersion!: string
+
   disableAutoLoadConfig?: boolean
   configName?: string
   defaultConfig?: TConfig
@@ -124,7 +128,6 @@ export abstract class BasePlugin<TConfig extends object = object> {
 
   // 构造完成后通过 initLogger 初始化
   logger!: Logger
-  abstract pluginName: string
 
   constructor(atri: ATRI) {
     this.atri = atri
