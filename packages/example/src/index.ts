@@ -31,5 +31,5 @@ await ATRI.init({
   bot,
   debug,
   baseDir: import.meta.dirname,
-  plugins: ['@atri-bot/plugin-ping', '@atri-bot/plugin-help'],
+  plugins: ['@atri-bot/plugin-ping', '@atri-bot/plugin-help', '@atri-bot/plugin-the-cake-is-a-lie'],
 })

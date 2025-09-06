@@ -21,7 +21,7 @@ export class ATRI extends InjectLogger {
     this.config = config
     this.bot = bot
     this.configDir = config.configDir ?? path.join(config.baseDir, 'config')
-    this.import = createRequire(path.join(this.config.baseDir, 'package.json'))
+    this.import = createRequire(config.baseDir)
   }
 
   static async init(config: ATRIConfig) {
