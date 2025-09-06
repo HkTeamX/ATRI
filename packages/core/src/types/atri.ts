@@ -8,10 +8,10 @@ export type ATRIConfig = {
   baseDir: string
   configDir?: string
   logLevel?: LogLevel
+  plugins?: string[]
 
   disableClearTerminal?: boolean
   disableStartupMessage?: boolean
-  disableAutoLoadPlugins?: boolean
 }
 
 export interface PluginModule {
@@ -19,5 +19,3 @@ export interface PluginModule {
 }
 
 export type LoadPluginHook = (plugin: BasePlugin) => Promise<boolean> | boolean
-
-export type ImportFunction = () => Promise<PluginModule>

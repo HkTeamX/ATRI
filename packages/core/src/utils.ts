@@ -27,9 +27,3 @@ export function sortObjectArray<T extends object>(
     return 0
   })
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getImportItemName(importFunction: () => Promise<any>) {
-  const match = importFunction.toString().match(/import\(([^)]+)\)/)
-  return match ? match[1].replace(/['"]/g, '') : '获取失败'
-}

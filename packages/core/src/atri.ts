@@ -1,15 +1,17 @@
 import { InjectLogger, Logger, LogLevel } from '@huan_kong/logger'
+import { createRequire } from 'module'
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { Bot } from './bot.js'
-import type { ATRIConfig, ImportFunction, LoadPluginHook, PluginModule } from './types/atri.js'
+import type { ATRIConfig, LoadPluginHook, PluginModule } from './types/atri.js'
 import type { BasePlugin } from './types/plugin.js'
-import { getImportItemName } from './utils.js'
 
 export class ATRI extends InjectLogger {
   config: ATRIConfig
   configDir: string
   bot: Bot
+  import: NodeJS.Require
 
   loadedPlugins: Record<string, BasePlugin> = {}
   loadPluginHooks: Record<string, LoadPluginHook> = {}
@@ -19,8 +21,7 @@ export class ATRI extends InjectLogger {
     this.config = config
     this.bot = bot
     this.configDir = config.configDir ?? path.join(config.baseDir, 'config')
-
-    this.logger.INFO(`ATRI 初始化完成`)
+    this.import = createRequire(path.join(this.config.baseDir, 'package.json'))
   }
 
   static async init(config: ATRIConfig) {
@@ -52,22 +53,25 @@ _____     _/  |_   _______   |__|
     const bot = await Bot.init(config.bot)
 
     const atri = new ATRI(config, bot)
+    if (config.plugins) {
+      const res = await atri.loadPlugins(config.plugins)
+      if (!res) {
+        logger.ERROR('插件加载失败，程序终止')
+        process.exit(1)
+      }
+    }
+
+    logger.INFO(`ATRI 初始化完成`)
 
     return atri
   }
 
-  async loadPlugin(importFunction: ImportFunction) {
-    const pluginName = getImportItemName(importFunction)
-    if (pluginName === '获取失败') {
-      this.logger.ERROR(`无法从 import 函数中获取插件名称。请确保传入的函数是一个 import 语句。`)
-      return false
-    }
-
+  async loadPlugin(pluginName: string) {
     this.logger.INFO(`加载插件: ${pluginName}`)
 
     let module: PluginModule
     try {
-      module = await importFunction()
+      module = await this.import(pluginName)
     } catch (error) {
       this.logger.ERROR(`插件 ${pluginName} 加载失败:`, error)
       return false
@@ -111,6 +115,14 @@ _____     _/  |_   _______   |__|
       return false
     }
 
+    return true
+  }
+
+  async loadPlugins(pluginNames: string[]) {
+    for (const pluginName of pluginNames) {
+      const res = await this.loadPlugin(pluginName)
+      if (!res) return false
+    }
     return true
   }
 

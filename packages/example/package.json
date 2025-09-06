@@ -12,7 +12,7 @@
     "type-check": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@atri-bot/core": "^1.1.3",
+    "@atri-bot/core": "^1.1.4",
     "@atri-bot/plugin-help": "^1.1.3",
     "@atri-bot/plugin-ping": "^1.1.0",
     "@huan_kong/logger": "^1.0.6",

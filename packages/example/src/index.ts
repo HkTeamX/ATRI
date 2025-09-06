@@ -1,4 +1,4 @@
-import { ATRI, type BotConfig, type ImportFunction } from '@atri-bot/core'
+import { ATRI, type BotConfig } from '@atri-bot/core'
 import { config } from 'dotenv'
 import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import path from 'node:path'
@@ -27,15 +27,9 @@ const bot: BotConfig = {
   },
 }
 
-const atri = await ATRI.init({
+await ATRI.init({
   bot,
   debug,
   baseDir: import.meta.dirname,
+  plugins: ['@atri-bot/plugin-ping', '@atri-bot/plugin-help'],
 })
-
-const plugins: ImportFunction[] = [
-  () => import('@atri-bot/plugin-ping'),
-  () => import('@atri-bot/plugin-help'),
-]
-
-await Promise.all(plugins.map((plugin) => atri.loadPlugin(plugin)))
