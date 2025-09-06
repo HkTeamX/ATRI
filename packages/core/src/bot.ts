@@ -25,12 +25,22 @@ export class Bot extends InjectLogger {
       ws.on('api.preSend', (context) => this.logger.DEBUG('发送API请求', context))
       ws.on('api.response.success', (context) => this.logger.DEBUG('收到API成功响应', context))
       ws.on('api.response.failure', (context) => this.logger.DEBUG('收到API失败响应', context))
-      ws.on('message', (context) => this.logger.DEBUG('收到消息:', context))
+      ws.on('message', (context) => {
+        // 过滤空消息
+        if (context.message.length === 0) {
+          this.logger.DEBUG('收到空消息, 已跳过处理流程:', context)
+          return
+        }
+        this.logger.DEBUG('收到消息:', context)
+      })
       ws.on('request', (context) => this.logger.DEBUG('收到请求:', context))
       ws.on('notice', (context) => this.logger.DEBUG('收到通知:', context))
     }
 
     ws.on('message', async (context) => {
+      // 过滤空消息
+      if (context.message.length === 0) return
+
       const endpoint = `message.${context.message_type}.${context.sub_type}`
       const isAdmin = this.config.adminId.includes(context.user_id)
       const isReply = context.message[0].type === 'reply'
