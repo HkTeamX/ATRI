@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { Bot } from './bot.js'
-import type { ATRIConfig, LoadPluginHook, PluginModule } from './types/atri.js'
+import type { ATRIConfig, LoadPluginHook, LoadPluginOptions, PluginModule } from './types/atri.js'
 import type { BasePlugin } from './types/plugin.js'
 
 export class ATRI extends InjectLogger {
@@ -66,19 +66,25 @@ _____     _/  |_   _______   |__|
     return atri
   }
 
-  async loadPlugin(pluginName: string) {
-    this.logger.INFO(`加载插件: ${pluginName}`)
+  async loadPlugin(pluginName: string, options?: LoadPluginOptions) {
+    options = {
+      initPlugin: true,
+      quiet: false,
+      ignoreHooks: false,
+      ...(options ?? {}),
+    }
+    if (!options.quiet) this.logger.INFO(`加载插件: ${pluginName}`)
 
     let module: PluginModule
     try {
       module = await this.import(pluginName)
     } catch (error) {
-      this.logger.ERROR(`插件 ${pluginName} 加载失败:`, error)
+      if (!options.quiet) this.logger.ERROR(`插件 ${pluginName} 加载失败:`, error)
       return false
     }
 
     if (!module.Plugin) {
-      this.logger.ERROR(`插件 ${pluginName} 加载失败: 未找到 Plugin 类`)
+      if (!options.quiet) this.logger.ERROR(`插件 ${pluginName} 加载失败: 未找到 Plugin 类`)
       return false
     }
 
@@ -86,7 +92,8 @@ _____     _/  |_   _______   |__|
       const plugin = new module.Plugin(this)
 
       if (!plugin.pluginName) {
-        this.logger.ERROR(`插件 ${pluginName} 加载失败: 缺少必要参数: pluginName`)
+        if (!options.quiet)
+          this.logger.ERROR(`插件 ${pluginName} 加载失败: 缺少必要参数: pluginName`)
         return false
       }
 
@@ -101,32 +108,37 @@ _____     _/  |_   _______   |__|
         }
       }
 
-      // 触发加载钩子
-      for (const hookName in this.loadPluginHooks) {
-        const hook = this.loadPluginHooks[hookName]
-        const result = await hook(plugin)
-        if (!result) {
-          this.logger.ERROR(`插件 ${plugin.pluginName} 加载失败: 加载钩子 ${hookName} 返回 false`)
-          return false
+      if (options.initPlugin && !options.ignoreHooks) {
+        // 触发加载钩子
+        for (const hookName in this.loadPluginHooks) {
+          const hook = this.loadPluginHooks[hookName]
+          const result = await hook(plugin)
+          if (!result) {
+            this.logger.ERROR(`插件 ${plugin.pluginName} 加载失败: 加载钩子 ${hookName} 返回 false`)
+            return false
+          }
         }
       }
 
-      // 自动加载配置
-      if (!plugin.getDisableAutoLoadConfig()) {
-        const config = await this.loadConfig(plugin.getConfigName(), plugin.getDefaultConfig())
-        plugin.setConfig(config)
+      if (options.initPlugin) {
+        // 自动加载配置
+        if (!plugin.getDisableAutoLoadConfig()) {
+          const config = await this.loadConfig(plugin.getConfigName(), plugin.getDefaultConfig())
+          plugin.setConfig(config)
+        }
+
+        plugin.initLogger()
+        await plugin.load()
+
+        this.loadedPlugins[plugin.pluginName] = plugin
+        if (!options.quiet) this.logger.INFO(`插件 ${plugin.pluginName} 加载成功`)
       }
 
-      await plugin.load()
-
-      this.loadedPlugins[plugin.pluginName] = plugin
-      this.logger.INFO(`插件 ${plugin.pluginName} 加载成功`)
+      return plugin
     } catch (error) {
       this.logger.ERROR(`插件 ${pluginName} 加载失败:`, error)
       return false
     }
-
-    return true
   }
 
   async loadPlugins(pluginNames: string[]) {

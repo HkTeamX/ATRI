@@ -284,13 +284,18 @@ export class Bot extends InjectLogger {
           },
         ]
       } catch (error) {
-        if (error instanceof CommanderError) {
-          if (error.code === 'commander.helpDisplayed') {
+        if (
+          error instanceof CommanderError ||
+          ('code' in (error as CommanderError) && 'message' in (error as CommanderError))
+        ) {
+          const { code, message } = error as CommanderError
+
+          if (code === 'commander.helpDisplayed') {
             const helpInformation = this.getCommandHelpInformation(commandName.toString())
             return [2, helpInformation ?? '']
           }
 
-          error.message = error.message
+          const errorMessage = message
             .replace('error:', '错误:')
             .replace('unknown option', '未知选项')
             .replace('missing required argument', '缺少必要参数')
@@ -302,10 +307,10 @@ export class Bot extends InjectLogger {
 
           return [
             2,
-            error.message + (error.message.includes('你是想要') ? '' : '\n(使用 -h 获取帮助信息)'),
+            errorMessage + (errorMessage.includes('你是想要') ? '' : '\n(使用 -h 获取帮助信息)'),
           ]
         } else {
-          this.logger.ERROR(error)
+          this.logger.ERROR('命令处理出错:', error)
           return [2, error instanceof Error ? error.message : '未知错误']
         }
       }

@@ -19,3 +19,9 @@ export interface PluginModule {
 }
 
 export type LoadPluginHook = (plugin: BasePlugin) => Promise<boolean> | boolean
+
+export interface LoadPluginOptions {
+  initPlugin?: boolean
+  quiet?: boolean
+  ignoreHooks?: boolean
+}
