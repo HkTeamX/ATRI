@@ -160,12 +160,12 @@ _____     _/  |_   _______   |__|
     }
   }
 
-  async unloadPlugin(packageName: string) {
+  async unloadPlugin(packageName: string): Promise<[0] | [1, string]> {
     const plugin = this.loadedPlugins[packageName]
 
     if (!plugin) {
       this.logger.WARN(`插件 ${packageName} 未加载`)
-      return true
+      return [1, '插件未加载']
     }
 
     try {
@@ -175,12 +175,11 @@ _____     _/  |_   _______   |__|
       delete this.loadedPlugins[packageName]
 
       this.logger.INFO(`插件 ${packageName} 卸载成功`)
+      return [0]
     } catch (error) {
       this.logger.ERROR(`插件 ${packageName} 卸载失败:`, error)
-      return false
+      return [1, error instanceof Error ? error.message : String(error)]
     }
-
-    return true
   }
 
   async loadConfig<TConfig extends object>(packageName: string, defaultConfig: TConfig) {
