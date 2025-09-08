@@ -12,7 +12,7 @@
     "type-check": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@atri-bot/core": "^1.1.8",
+    "@atri-bot/core": "^1.1.9",
     "@atri-bot/plugin-help": "^1.1.4",
     "@atri-bot/plugin-ping": "^1.1.1",
     "@atri-bot/plugin-the-cake-is-a-lie": "^1.1.2",

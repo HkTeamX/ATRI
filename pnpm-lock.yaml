@@ -69,8 +69,8 @@ importers:
   packages/example:
     dependencies:
       '@atri-bot/core':
-        specifier: ^1.1.8
-        version: 1.1.8
+        specifier: ^1.1.9
+        version: 1.1.9
       '@atri-bot/plugin-help':
         specifier: ^1.1.4
         version: 1.1.4
@@ -174,8 +174,8 @@ packages:
     resolution: {integrity: sha512-npZ9aeag4SGTx677eqPL3rkSPlQrnzx/8wNrl1P7GpWq9w/eTmRbOq+wKrJ2r78idlY0MMgmY/mld2tq6dc44g==}
     engines: {node: '>= 14.0.0'}
 
-  '@atri-bot/core@1.1.8':
-    resolution: {integrity: sha512-fJIho0t0iJmQKH4agfrRvDNrIUmKkTMG9BLKpLx+B6VL4rUY6ANc6D7gp8jq6WPXRDFpfaTzfI82nERHOF7ivg==}
+  '@atri-bot/core@1.1.9':
+    resolution: {integrity: sha512-h5IVjwvzgXfMZdrDtQpWU6enyc2vi59TDg+dYBQzYIplqbqZzYHJ8w1On5H6e3JSBq8GhgzqJ/QQzjyKqiNnJg==}
 
   '@atri-bot/plugin-help@1.1.4':
     resolution: {integrity: sha512-4NwvW8b8q/rPvU1NJL26YY1MVZCWOZ1KstpoOaLS478fK2/enPVtG+mTHL+BriBmmBH2OUbohSw86fyZeDaE0Q==}
@@ -2263,7 +2263,7 @@ snapshots:
     dependencies:
       '@algolia/client-common': 5.37.0
 
-  '@atri-bot/core@1.1.8':
+  '@atri-bot/core@1.1.9':
     dependencies:
       '@huan_kong/logger': 1.0.6
       commander: 14.0.0
@@ -2276,7 +2276,7 @@ snapshots:
 
   '@atri-bot/plugin-help@1.1.4':
     dependencies:
-      '@atri-bot/core': 1.1.8
+      '@atri-bot/core': 1.1.9
       '@huan_kong/logger': 1.0.6
       commander: 14.0.0
       node-napcat-ts: 0.4.19
@@ -2286,7 +2286,7 @@ snapshots:
 
   '@atri-bot/plugin-ping@1.1.1':
     dependencies:
-      '@atri-bot/core': 1.1.8
+      '@atri-bot/core': 1.1.9
       '@huan_kong/logger': 1.0.6
       commander: 14.0.0
       node-napcat-ts: 0.4.19
@@ -2296,7 +2296,7 @@ snapshots:
 
   '@atri-bot/plugin-the-cake-is-a-lie@1.1.2':
     dependencies:
-      '@atri-bot/core': 1.1.8
+      '@atri-bot/core': 1.1.9
       '@huan_kong/logger': 1.0.6
       commander: 14.0.0
       node-napcat-ts: 0.4.19
