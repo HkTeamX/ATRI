@@ -304,6 +304,10 @@ export class Bot extends InjectLogger {
             .replace("option '", "选项 '")
             .replace('argument missing', '缺少参数')
             .replace('Did you mean', '你是想要')
+            .replace(
+              /Expected (\d+) arguments? but got (\d+)\./,
+              '期望 $1 个参数，但得到了 $2 个参数。',
+            )
 
           return [
             2,
