@@ -6,6 +6,12 @@ import type { Bot } from '../bot.js'
 import type { UnRegHandler } from './bot.js'
 import type { RemoveField } from './utils.js'
 
+export interface PackageJson {
+  name: string
+  version: string
+  [key: string]: unknown
+}
+
 export type CallbackReturnType = void | 'quit'
 export type CallbackReturn = Promise<CallbackReturnType> | CallbackReturnType
 
@@ -112,9 +118,7 @@ export type AutoInferNoticeEndPoint = {
 }[keyof NoticeHandler]
 
 export abstract class BasePlugin<TConfig extends object = object> {
-  abstract pluginName: string
-  // 构造完成后自动注入
-  pluginVersion!: string
+  packageJson: PackageJson
 
   disableAutoLoadConfig?: boolean
   configName?: string
@@ -124,55 +128,27 @@ export abstract class BasePlugin<TConfig extends object = object> {
   atri: ATRI
   bot: Bot
   ws: NCWebsocket
-  private unregHandlers: UnRegHandler[] = []
+  unregHandlers: UnRegHandler[] = []
 
-  // 构造完成后通过 initLogger 初始化
-  logger!: Logger
+  logger: Logger
 
-  constructor(atri: ATRI) {
+  constructor(atri: ATRI, packageJson: PackageJson) {
     this.atri = atri
     this.bot = atri.bot
     this.ws = atri.bot.ws
     this.config = {} as TConfig
-  }
-
-  initLogger() {
-    const config = this.atri.config
+    this.packageJson = packageJson
     this.logger = new Logger({
-      title: this.pluginName,
-      level: config.debug ? LogLevel.DEBUG : config.logLevel,
+      title: this.packageJson.name,
+      level: atri.config.debug ? LogLevel.DEBUG : atri.config.logLevel,
     })
   }
 
   abstract load(): void | Promise<void>
   abstract unload(): void | Promise<void>
 
-  setConfig(config: TConfig) {
-    this.config = config
-  }
-
   saveConfig(config?: TConfig) {
-    this.atri.saveConfig(this.configName ?? this.pluginName, config ?? this.config)
-  }
-
-  getDisableAutoLoadConfig() {
-    return this.disableAutoLoadConfig
-  }
-
-  getConfigName() {
-    return this.configName ?? this.pluginName
-  }
-
-  getDefaultConfig(): TConfig {
-    return this.defaultConfig ?? ({} as TConfig)
-  }
-
-  getUnregHandlers() {
-    return this.unregHandlers
-  }
-
-  getPluginName() {
-    return this.pluginName
+    this.atri.saveConfig(this.configName ?? this.packageJson.name, config ?? this.config)
   }
 
   regCommandEvent<Opts extends CommandContext = CommandContext>(
@@ -189,7 +165,7 @@ export abstract class BasePlugin<TConfig extends object = object> {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'command',
-      pluginName: this.pluginName,
+      pluginName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg
@@ -203,7 +179,7 @@ export abstract class BasePlugin<TConfig extends object = object> {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'message',
-      pluginName: this.pluginName,
+      pluginName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg
@@ -217,7 +193,7 @@ export abstract class BasePlugin<TConfig extends object = object> {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'request',
-      pluginName: this.pluginName,
+      pluginName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg
@@ -231,7 +207,7 @@ export abstract class BasePlugin<TConfig extends object = object> {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'notice',
-      pluginName: this.pluginName,
+      pluginName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg

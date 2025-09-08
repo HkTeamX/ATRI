@@ -18,10 +18,14 @@ export interface PluginModule {
   Plugin?: new (...args: ConstructorParameters<typeof BasePlugin>) => BasePlugin
 }
 
-export type LoadPluginHook = (plugin: BasePlugin) => Promise<boolean> | boolean
+export interface LoadPluginHookContext {
+  plugin: BasePlugin
+  packageName: string
+}
+
+export type LoadPluginHook = (context: LoadPluginHookContext) => Promise<boolean> | boolean
 
 export interface LoadPluginOptions {
   initPlugin?: boolean
   quiet?: boolean
-  ignoreHooks?: boolean
 }
