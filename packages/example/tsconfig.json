@@ -4,7 +4,20 @@
     "outDir": "out",
     "declaration": false,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@atri-bot/core": ["../core/src/index.ts"],
+      "@atri-bot/plugin-help": [
+        "../../ATRI-Official-Plugins/packages/atri-plugin-help/src/index.ts"
+      ],
+      "@atri-bot/plugin-ping": [
+        "../../ATRI-Official-Plugins/packages/atri-plugin-ping/src/index.ts"
+      ],
+      "@atri-bot/plugin-plugin-store": [
+        "../../ATRI-Official-Plugins/packages/atri-plugin-plugin-store/src/index.ts"
+      ],
+      "@atri-bot/plugin-the-cake-is-a-lie": [
+        "../../ATRI-Official-Plugins/packages/atri-plugin-the-cake-is-a-lie/src/index.ts"
+      ]
     },
     "noEmit": true,
     "allowImportingTsExtensions": true
