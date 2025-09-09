@@ -9,7 +9,7 @@
 更多示例可以参考 [example](https://github.com/HkTeamX/ATRI/tree/main/packages/example)
 
 ```ts
-import { BasePlugin, type CommandCallback } from '@huan_kong/atri'
+import { BasePlugin, type CommandCallback } from '@atri-bot/core'
 import { Command } from 'commander'
 import { convertCQCodeToJSON, type SendMessageSegment } from 'node-napcat-ts'
 
@@ -19,7 +19,7 @@ export interface PingConfig {
 
 export type PingCommandContext = {
   params: { reply?: string }
-  args: [string | undefined]
+  args: [string?]
 }
 
 //           ↓ 类名固定为 Plugin        ↓ 传入配置文件的类型
@@ -37,7 +37,11 @@ export class Plugin extends BasePlugin<PingConfig> {
     default_reply: 'pong',
   }
 
-  init() {
+  // 请不要在构造函数中编写逻辑, 防止意外重复触发!!!
+  // constructor() {} <- 没错就是我
+
+  // 初始化函数, 我说的构造函数不是这个!
+  load() {
     // 第一个参数为 定义 callback 中收到的数据
     this.reg_command_event<PingCommandContext>({
       end_point: 'message.private',
@@ -70,6 +74,8 @@ export class Plugin extends BasePlugin<PingConfig> {
       // callback: (options) => this.handle_on_ping(options),
     })
   }
+
+  unload() {}
 
   /**
    * 处理 ping 命令

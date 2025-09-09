@@ -1,50 +1,41 @@
-import { satisfies } from 'compare-versions'
+import { InjectLogger, Logger, LogLevel } from '@huan_kong/logger'
+import { createRequire } from 'module'
 import fs from 'node:fs'
 import path from 'node:path'
-import url from 'node:url'
-import { Bot, type BotConfig } from './bot.js'
-import { Logger } from './logger.js'
-import type { BasePlugin } from './plugin.js'
+import process from 'node:process'
+import { Bot } from './bot.js'
+import type { ATRIConfig, LoadPluginHook, LoadPluginOptions, PluginModule } from './types/atri.js'
+import type { BasePlugin, PackageJson } from './types/plugin.js'
 
-export type ATRIConfig = {
-  bot: BotConfig
-  debug?: boolean
-  base_dir: string
-  disable_help_plugin?: boolean
-  disable_clear_terminal?: boolean
-  disable_startup_message?: boolean
-
-  is_the_cake_a_lie?: boolean
-}
-
-export interface WaitingPlugin {
-  plugin_path: string
-  dependencies: { [key: string]: string }
-}
-
-export class ATRI {
-  bot: Bot
-  logger: Logger
+export class ATRI extends InjectLogger {
   config: ATRIConfig
+  configDir: string
+  bot: Bot
+  import: NodeJS.Require
 
-  loaded_plugins: { [key: string]: BasePlugin<object> } = {}
-  waiting_plugins: { [key: string]: WaitingPlugin } = {}
+  loadedPlugins: Record<string, BasePlugin> = {}
+  loadPluginHooks: Record<string, LoadPluginHook> = {}
 
-  constructor(config: ATRIConfig, bot: Bot) {
-    this.bot = bot
-    this.logger = new Logger('ATRI', config.debug)
+  private constructor(config: ATRIConfig, bot: Bot) {
+    super({ level: config.debug ? LogLevel.DEBUG : config.logLevel })
     this.config = config
-
-    this.logger.SUCCESS(`ATRI 初始化完成`)
+    this.bot = bot
+    this.configDir = config.configDir ?? path.join(config.baseDir, 'config')
+    this.import = createRequire(config.baseDir)
   }
 
   static async init(config: ATRIConfig) {
-    const logger = new Logger('ATRI', config.debug)
+    if (config.debug) config.logLevel = LogLevel.DEBUG
+
+    const logger = new Logger({
+      title: 'ATRI',
+      level: config.debug ? LogLevel.DEBUG : config.logLevel,
+    })
 
     // 清空终端
-    if (!config.disable_clear_terminal) console.log('\x1Bc')
+    if (!config.disableClearTerminal) console.log('\x1Bc')
 
-    if (!config.disable_startup_message) {
+    if (!config.disableStartupMessage) {
       console.log(
         `%c            __               .__ 
 _____     _/  |_   _______   |__|
@@ -57,192 +48,173 @@ _____     _/  |_   _______   |__|
       logger.INFO(`アトリは、高性能ですから！`)
     }
 
-    logger.DEBUG(`初始化 ATRI 实例`)
-    logger.DEBUG(`配置信息:`, config)
-
     if (!('debug' in config.bot)) config.bot.debug = config.debug
+    if (!('logLevel' in config.bot)) config.bot.logLevel = config.logLevel
     const bot = await Bot.init(config.bot)
 
     const atri = new ATRI(config, bot)
-    if (!config.disable_help_plugin) await atri.load_plugin('./plugins/help', import.meta.dirname)
-    if (config.is_the_cake_a_lie)
-      await atri.load_plugin('./plugins/this_is_a_cake', import.meta.dirname)
+
+    for (const packageName of config.plugins ?? []) {
+      const [retCode] = await atri.loadPlugin(packageName)
+      if (retCode !== 0) {
+        logger.ERROR('插件加载失败，程序终止')
+        process.exit(1)
+      }
+    }
+
+    logger.INFO(`ATRI 初始化完成`)
 
     return atri
   }
 
   /**
-   * 0 - 加载成功
-   * 1 - 缺少依赖
-   * 2 - 其他错误
+   * 0 - 成功 (返回 插件实例化后的对象)
+   * 1 - 失败 (返回 错误信息)
+   * 2 - 加载钩子返回 false (返回 钩子名)
    */
-  async load_plugin(plugin_path: string, base_dir = this.config.base_dir): Promise<0 | 1 | 2> {
-    this.logger.DEBUG(`开始加载 ${plugin_path} 插件`)
+  async loadPlugin(
+    packageName: string,
+    options?: LoadPluginOptions,
+  ): Promise<[0, BasePlugin] | [1 | 2, string]> {
+    options = {
+      initPlugin: true,
+      quiet: false,
+      ...(options ?? {}),
+    }
+    if (!options.quiet) this.logger.INFO(`加载插件: ${packageName}`)
 
-    const base_plugin_dir = path.join(base_dir, plugin_path)
-    let plugin_dir = base_plugin_dir
-    this.logger.DEBUG(`插件导入路径: ${plugin_dir}`)
-
-    if (!fs.existsSync(plugin_dir)) {
-      plugin_dir = `${base_plugin_dir}.ts`
-
-      this.logger.DEBUG(`插件非文件夹插件, 尝试为单文件TS插件`)
-      this.logger.DEBUG(`新插件导入路径: ${plugin_dir}`)
+    if (this.loadedPlugins[packageName]) {
+      if (!options.quiet) this.logger.WARN(`插件 ${packageName} 已加载，跳过加载`)
+      return [0, this.loadedPlugins[packageName]]
     }
 
-    if (!fs.existsSync(plugin_dir)) {
-      plugin_dir = `${base_plugin_dir}.js`
-
-      this.logger.DEBUG(`插件非文件夹插件, 尝试为单文件JS插件`)
-      this.logger.DEBUG(`新插件导入路径: ${plugin_dir}`)
-    }
-
-    if (!fs.existsSync(plugin_dir)) {
-      this.logger.ERROR(`插件 ${plugin_dir} 入口文件不存在`)
-      return 2
-    }
-
-    let plugin_entity: BasePlugin | undefined
+    let module: PluginModule
     try {
-      const module = await import(url.pathToFileURL(plugin_dir).toString())
-      const plugin_variable = module.Plugin
+      module = await this.import(packageName)
+    } catch (error) {
+      if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 导入失败:`, error)
+      return [1, error instanceof Error ? error.message : String(error)]
+    }
 
-      if (!plugin_variable) {
-        this.logger.ERROR(`插件 ${plugin_path} 加载失败, 插件未导出 Plugin 变量`)
-        return 2
+    if (!module.Plugin) {
+      if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 加载失败: 未找到 Plugin 类`)
+      return [1, '未找到 Plugin 类']
+    }
+
+    let packageJson: PackageJson
+    try {
+      const pkgPath = this.import.resolve(path.join(packageName, 'package.json'))
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+      packageJson = pkg
+    } catch (error) {
+      if (!options.quiet) {
+        this.logger.WARN(`插件 ${packageName} 未找到 package.json, 将使用未知代替`)
+        this.logger.DEBUG(error)
       }
+      packageJson = { name: '未知', version: '未知' }
+    }
 
-      plugin_entity = new plugin_variable(this) as BasePlugin
-      if (!plugin_entity.name || !plugin_entity.version) {
-        this.logger.ERROR(`插件 ${plugin_path} 加载失败, 插件缺少必要参数`)
-        return 2
-      }
+    let plugin: BasePlugin
+    try {
+      plugin = new module.Plugin(this, packageJson)
+    } catch (error) {
+      if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 实例化失败:`, error)
+      return [1, error instanceof Error ? error.message : String(error)]
+    }
 
-      if (this.loaded_plugins[plugin_entity.name]) {
-        this.logger.INFO(`插件 ${plugin_entity.name} 已加载过, 跳过本次加载`)
-        return 2
-      }
+    if (!options.initPlugin) return [0, plugin]
 
-      // 检查依赖
-      if (plugin_entity.dependencies) {
-        const result = this.check_dependencies(plugin_entity.name, plugin_entity.dependencies)
+    try {
+      // 触发加载钩子
+      for (const hookName in this.loadPluginHooks) {
+        const hook = this.loadPluginHooks[hookName]
+        const result = await hook({
+          plugin,
+          packageName,
+        })
         if (!result) {
-          this.waiting_plugins[plugin_entity.name] = {
-            plugin_path,
-            dependencies: plugin_entity.dependencies ?? {},
+          if (!options.quiet) {
+            this.logger.ERROR(`插件 ${packageName} 加载失败: 加载钩子 ${hookName} 返回 false`)
           }
-          return 1
+          return [2, hookName]
         }
       }
 
-      // 开始加载配置文件
-      if (plugin_entity.auto_load_config ?? true) {
-        const config = await this.load_config(
-          plugin_entity.config_name ?? plugin_entity.name,
-          plugin_entity.default_config,
+      // 自动加载配置
+      if (!plugin.disableAutoLoadConfig) {
+        plugin.config = await this.loadConfig(
+          plugin.configName ?? packageName,
+          plugin.defaultConfig ?? {},
         )
-        plugin_entity.config = config
-      } else {
-        plugin_entity.config = {}
       }
 
-      // 执行初始化
-      await plugin_entity.init?.()
+      await plugin.load()
+
+      this.loadedPlugins[packageName] = plugin
+      if (!options.quiet) this.logger.INFO(`插件 ${packageName} 加载成功`)
+
+      return [0, plugin]
     } catch (error) {
-      this.logger.ERROR(`加载插件 ${plugin_entity?.name ?? plugin_path} 失败`, error)
-      return 2
+      if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 加载失败:`, error)
+      return [1, error instanceof Error ? error.message : String(error)]
     }
-
-    this.loaded_plugins[plugin_entity.name] = plugin_entity
-    this.logger.SUCCESS(`插件 ${plugin_entity.name} 加载成功`)
-
-    // 加载完成了, 检查等待队列
-    if (Object.keys(this.waiting_plugins).length > 0) {
-      for (const [plugin_name, waiting_plugin] of Object.entries(this.waiting_plugins)) {
-        if (plugin_entity.name === plugin_name) continue
-        // 检查依赖
-        const result = this.check_dependencies(plugin_name, waiting_plugin.dependencies)
-        if (result) {
-          this.logger.DEBUG(`等待队列中的插件 ${plugin_name} 依赖满足, 开始加载`)
-          const load_result = await this.load_plugin(waiting_plugin.plugin_path)
-          // 移除等待队列
-          if (load_result === 0) delete this.waiting_plugins[plugin_name]
-        }
-      }
-    }
-
-    return 0
   }
 
-  private check_dependencies(
-    plugin_name: string,
-    dependencies: WaitingPlugin['dependencies'] = {},
-  ) {
-    for (const [name, version] of Object.entries(dependencies)) {
-      const loaded_plugin = this.loaded_plugins[name]
-      if (!loaded_plugin) {
-        this.logger.DEBUG(`插件 ${plugin_name} 加载失败, 缺少依赖插件 ${name}, 已加入等待队列`)
-        return false
-      }
+  async unloadPlugin(packageName: string): Promise<[0] | [1, string]> {
+    const plugin = this.loadedPlugins[packageName]
 
-      if (!satisfies(loaded_plugin.version, version)) {
-        this.logger.ERROR(
-          `插件 ${plugin_name} 加载失败, 依赖插件 ${name} 版本不匹配 (需要: ${version}, 当前: ${loaded_plugin.version})`,
-        )
-        return false
-      }
+    if (!plugin) {
+      this.logger.WARN(`插件 ${packageName} 未加载`)
+      return [1, '插件未加载']
     }
-
-    return true
-  }
-
-  async load_config(config_name: string, default_config = {}) {
-    this.logger.DEBUG(`开始加载 ${config_name} 配置`)
-
-    const config_dir = path.join(this.config.base_dir, 'config')
-    if (!fs.existsSync(config_dir)) fs.mkdirSync(config_dir)
-
-    const config_file = path.join(config_dir, `${config_name}.json`)
-    if (!fs.existsSync(config_file))
-      fs.writeFileSync(config_file, JSON.stringify(default_config, null, 2))
-
-    const config_text = fs.readFileSync(config_file, 'utf-8')
-    let config_json: object | undefined
 
     try {
-      config_json = JSON.parse(config_text) as object
-      config_json = { ...default_config, ...config_json }
-      fs.writeFileSync(config_file, JSON.stringify(config_json, null, 2))
+      plugin.unregHandlers.forEach((unreg) => unreg())
+      await plugin.unload()
+
+      delete this.loadedPlugins[packageName]
+
+      this.logger.INFO(`插件 ${packageName} 卸载成功`)
+      return [0]
     } catch (error) {
-      this.logger.ERROR(`配置 ${config_name} 加载失败`, error)
-      throw new Error(`配置 ${config_name} 加载失败`)
+      this.logger.ERROR(`插件 ${packageName} 卸载失败:`, error)
+      return [1, error instanceof Error ? error.message : String(error)]
     }
-
-    this.logger.DEBUG(`配置 ${config_name} 内容:`, config_json)
-    this.logger.SUCCESS(`配置 ${config_name} 加载成功`)
-
-    return config_json
   }
 
-  async load_plugins(plugins: string[], base_dir = this.config.base_dir) {
-    for (const plugin of plugins) {
-      const result = await this.load_plugin(plugin, base_dir)
-      if (result === 2) return false
+  async loadConfig<TConfig extends object>(packageName: string, defaultConfig: TConfig) {
+    packageName = packageName.replaceAll('/', '__')
+
+    if (!fs.existsSync(this.configDir)) fs.mkdirSync(this.configDir, { recursive: true })
+    const configPath = path.join(this.configDir, `${packageName}.json`)
+
+    if (!fs.existsSync(configPath)) {
+      fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2))
+      return defaultConfig
     }
-    return true
+
+    try {
+      const currentJson = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as TConfig
+      return { ...defaultConfig, ...currentJson }
+    } catch (error) {
+      this.logger.ERROR(`插件 ${packageName} 配置加载失败:`, error)
+      return {}
+    }
   }
 
-  check_waiting_plugins() {
-    const plugins = Object.keys(this.waiting_plugins)
-    if (plugins.length <= 0) {
-      this.logger.SUCCESS(`所有插件已加载完成`)
-      return false
-    }
-    this.logger.ERROR(`====================================================================`)
-    this.logger.ERROR(`请检查, 以下插件正在等待依赖:`)
-    this.logger.ERROR(plugins.join(', '))
-    this.logger.ERROR(`====================================================================`)
-    this.logger.DEBUG('插件信息:', this.waiting_plugins)
-    process.exit(1)
+  async saveConfig<TConfig extends object>(packageName: string, config: TConfig) {
+    packageName = packageName.replaceAll('/', '__')
+
+    if (!fs.existsSync(this.configDir)) fs.mkdirSync(this.configDir, { recursive: true })
+    const configPath = path.join(this.configDir, `${packageName}.json`)
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
+  }
+
+  addPluginLoadHook(hookName: string, hook: LoadPluginHook) {
+    this.loadPluginHooks[hookName] = hook
+  }
+
+  removePluginLoadHook(hookName: string) {
+    delete this.loadPluginHooks[hookName]
   }
 }

@@ -4,8 +4,7 @@
     "outDir": "out",
     "declaration": false,
     "paths": {
-      "@/*": ["./src/*"],
-      "@huan_kong/atri": ["../core/src/index.ts"]
+      "@/*": ["./src/*"]
     },
     "noEmit": true,
     "allowImportingTsExtensions": true
