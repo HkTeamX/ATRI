@@ -1,12 +1,6 @@
 # 开发插件
 
-如果为单文件, 直接编写即可
-
-如果为文件夹, 需要在 `index.ts` / `index.js` 文件中导出 `Plugin` 类
-
-还有一些高级用法, 可以查阅 `ts` 的类型文件
-
-更多示例可以参考 [example](https://github.com/HkTeamX/ATRI/tree/main/packages/example)
+更多示例可以参考 [ATRI-Official-Plugins](https://github.com/HkTeamX/ATRI-Official-Plugins)
 
 ```ts
 import { BasePlugin, type CommandCallback } from '@atri-bot/core'
