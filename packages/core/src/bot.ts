@@ -55,11 +55,11 @@ export class Bot extends InjectLogger {
           try {
             const result = await event.callback({ context })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
           }
         }
       }
@@ -94,11 +94,11 @@ export class Bot extends InjectLogger {
               args,
             })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
           }
         }
       }
@@ -112,11 +112,11 @@ export class Bot extends InjectLogger {
           try {
             const result = await event.callback({ context })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
           }
         }
       }
@@ -137,11 +137,11 @@ export class Bot extends InjectLogger {
           try {
             const result = await event.callback({ context })
             if (result === 'quit') {
-              this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止`)
+              this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.pluginName} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
           }
         }
       }

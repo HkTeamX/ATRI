@@ -27,16 +27,9 @@ const bot: BotConfig = {
   },
 }
 
-const atri = await ATRI.init({
+await ATRI.init({
   bot,
   debug,
   baseDir: import.meta.dirname,
-  // 如果需要插件商城的相关功能, 比如禁用插件等, 请第一个加载 '@atri-bot/plugin-plugin-store' 插件
   plugins: ['@atri-bot/plugin-plugin-store'],
 })
-
-await Promise.all(
-  ['@atri-bot/plugin-ping', '@atri-bot/plugin-help', '@atri-bot/plugin-the-cake-is-a-lie'].map(
-    (packageName) => atri.loadPlugin(packageName),
-  ),
-)

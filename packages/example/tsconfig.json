@@ -4,11 +4,7 @@
     "outDir": "out",
     "declaration": false,
     "paths": {
-      "@/*": ["./src/*"],
-      "@atri-bot/core": ["../core/src/index.ts"],
-      "@atri-bot/plugin-plugin-store": [
-        "../../../ATRI-Official-Plugins/packages/atri-plugin-pluginStore/src/index.ts"
-      ]
+      "@/*": ["./src/*"]
     },
     "noEmit": true,
     "allowImportingTsExtensions": true

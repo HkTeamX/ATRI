@@ -202,9 +202,11 @@ _____     _/  |_   _______   |__|
     }
   }
 
-  async saveConfig<TConfig extends object>(pluginName: string, config: TConfig) {
+  async saveConfig<TConfig extends object>(packageName: string, config: TConfig) {
+    packageName = packageName.replaceAll('/', '__')
+
     if (!fs.existsSync(this.configDir)) fs.mkdirSync(this.configDir, { recursive: true })
-    const configPath = path.join(this.configDir, `${pluginName}.json`)
+    const configPath = path.join(this.configDir, `${packageName}.json`)
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
   }
 

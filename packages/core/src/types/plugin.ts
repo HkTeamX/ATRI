@@ -43,7 +43,7 @@ export interface CommandEvent<
   type: 'command'
   endPoint?: T
   callback: (context: CommandCallback<Opts, T>) => CallbackReturn
-  pluginName: string
+  packageName: string
   commandName: string | RegExp
   commander?: Command
   priority?: number
@@ -61,7 +61,7 @@ export interface MessageEvent<T extends keyof MessageHandler = 'message'> {
   endPoint?: T
   regexp?: RegExp
   callback: (context: MessageCallback<T>) => CallbackReturn
-  pluginName: string
+  packageName: string
   priority?: number
   needReply?: boolean
   needAdmin?: boolean
@@ -75,7 +75,7 @@ export interface NoticeEvent<T extends keyof NoticeHandler = 'notice'> {
   type: 'notice'
   endPoint?: T
   callback: (context: NoticeCallback<T>) => CallbackReturn
-  pluginName: string
+  packageName: string
   priority?: number
 }
 
@@ -87,32 +87,32 @@ export interface RequestEvent<T extends keyof RequestHandler = 'request'> {
   type: 'request'
   endPoint?: T
   callback: (context: RequestCallback<T>) => CallbackReturn
-  pluginName: string
+  packageName: string
   priority?: number
 }
 
 export type RegEventOptions = CommandEvent | MessageEvent | NoticeEvent | RequestEvent
 
 export type AutoInferCommandEndPoint<Opts extends CommandContext = CommandContext> = {
-  [T in keyof MessageHandler]: RemoveField<CommandEvent<Opts, T>, 'pluginName' | 'type'> & {
+  [T in keyof MessageHandler]: RemoveField<CommandEvent<Opts, T>, 'packageName' | 'type'> & {
     endPoint: T
   }
 }[keyof MessageHandler]
 
 export type AutoInferMessageEndPoint = {
-  [T in keyof MessageHandler]: RemoveField<MessageEvent<T>, 'pluginName' | 'type'> & {
+  [T in keyof MessageHandler]: RemoveField<MessageEvent<T>, 'packageName' | 'type'> & {
     endPoint: T
   }
 }[keyof MessageHandler]
 
 export type AutoInferRequestEndPoint = {
-  [T in keyof RequestHandler]: RemoveField<RequestEvent<T>, 'pluginName' | 'type'> & {
+  [T in keyof RequestHandler]: RemoveField<RequestEvent<T>, 'packageName' | 'type'> & {
     endPoint: T
   }
 }[keyof RequestHandler]
 
 export type AutoInferNoticeEndPoint = {
-  [T in keyof NoticeHandler]: RemoveField<NoticeEvent<T>, 'pluginName' | 'type'> & {
+  [T in keyof NoticeHandler]: RemoveField<NoticeEvent<T>, 'packageName' | 'type'> & {
     endPoint: T
   }
 }[keyof NoticeHandler]
@@ -155,59 +155,63 @@ export abstract class BasePlugin<TConfig extends object = object> {
     options: AutoInferCommandEndPoint<Opts>,
   ): () => void
   regCommandEvent<Opts extends CommandContext = CommandContext>(
-    options: RemoveField<CommandEvent<Opts, 'message'>, 'pluginName' | 'type'>,
+    options: RemoveField<CommandEvent<Opts, 'message'>, 'packageName' | 'type'>,
   ): () => void
   regCommandEvent<Opts extends CommandContext = CommandContext>(
     options:
       | AutoInferCommandEndPoint<Opts>
-      | RemoveField<CommandEvent<Opts, 'message'>, 'pluginName' | 'type'>,
+      | RemoveField<CommandEvent<Opts, 'message'>, 'packageName' | 'type'>,
   ) {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'command',
-      pluginName: this.packageJson.name,
+      packageName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg
   }
 
   regMessageEvent(options: AutoInferMessageEndPoint): () => void
-  regMessageEvent(options: RemoveField<MessageEvent<'message'>, 'pluginName' | 'type'>): () => void
+  regMessageEvent(options: RemoveField<MessageEvent<'message'>, 'packageName' | 'type'>): () => void
   regMessageEvent(
-    options: AutoInferMessageEndPoint | RemoveField<MessageEvent<'message'>, 'pluginName' | 'type'>,
+    options:
+      | AutoInferMessageEndPoint
+      | RemoveField<MessageEvent<'message'>, 'packageName' | 'type'>,
   ) {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'message',
-      pluginName: this.packageJson.name,
+      packageName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg
   }
 
   regRequestEvent(options: AutoInferRequestEndPoint): () => void
-  regRequestEvent(options: RemoveField<RequestEvent<'request'>, 'pluginName' | 'type'>): () => void
+  regRequestEvent(options: RemoveField<RequestEvent<'request'>, 'packageName' | 'type'>): () => void
   regRequestEvent(
-    options: AutoInferRequestEndPoint | RemoveField<RequestEvent<'request'>, 'pluginName' | 'type'>,
+    options:
+      | AutoInferRequestEndPoint
+      | RemoveField<RequestEvent<'request'>, 'packageName' | 'type'>,
   ) {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'request',
-      pluginName: this.packageJson.name,
+      packageName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg
   }
 
   regNoticeEvent(options: AutoInferNoticeEndPoint): () => void
-  regNoticeEvent(options: RemoveField<NoticeEvent<'notice'>, 'pluginName' | 'type'>): () => void
+  regNoticeEvent(options: RemoveField<NoticeEvent<'notice'>, 'packageName' | 'type'>): () => void
   regNoticeEvent(
-    options: AutoInferNoticeEndPoint | RemoveField<NoticeEvent<'notice'>, 'pluginName' | 'type'>,
+    options: AutoInferNoticeEndPoint | RemoveField<NoticeEvent<'notice'>, 'packageName' | 'type'>,
   ) {
     const unreg = this.bot.regEvent({
       ...options,
       type: 'notice',
-      pluginName: this.packageJson.name,
+      packageName: this.packageJson.name,
     } as RegEventOptions)
     this.unregHandlers.push(unreg)
     return unreg
