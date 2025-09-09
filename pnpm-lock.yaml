@@ -75,8 +75,8 @@ importers:
         specifier: ^1.1.5
         version: 1.1.5
       '@atri-bot/plugin-ping':
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^1.1.3
+        version: 1.1.3
       '@atri-bot/plugin-plugin-store':
         specifier: ^1.1.1
         version: 1.1.1
@@ -183,8 +183,8 @@ packages:
   '@atri-bot/plugin-help@1.1.5':
     resolution: {integrity: sha512-8a4k6QnlPQ/AnNsRmS35phsCKhHKagyzuvRKcxJ09iN/lJMEBEmDt/52ph47tJeH5pqhCV0zM3AJDSpkguc2Og==}
 
-  '@atri-bot/plugin-ping@1.1.2':
-    resolution: {integrity: sha512-lEwVTyWWQcU19T/DDKY0sgJSN+ZIoKbcaBy32h6K7Jpndwj/nToSrMLOwtaZCmrSkRQjldAV9adNfZu4ZiiY4g==}
+  '@atri-bot/plugin-ping@1.1.3':
+    resolution: {integrity: sha512-JdCMNZ9K1luj4EAPxbMbMqeTSur20VIfELgES6Nd1cMRdBws1847nuh74jibHYIingmU0HD1fe9BU3iS1v/krA==}
 
   '@atri-bot/plugin-plugin-store@1.1.1':
     resolution: {integrity: sha512-AUEPjmFh7CP+3MHIi14sfJHvubKr5DSocikv1NhqgXN56gmbUNHah8cQpD5LUs6st354s4Coji4XFD8gN/Y7Ww==}
@@ -2329,7 +2329,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@atri-bot/plugin-ping@1.1.2':
+  '@atri-bot/plugin-ping@1.1.3':
     dependencies:
       '@atri-bot/core': 1.1.13
       '@huan_kong/logger': 1.0.6

@@ -14,27 +14,19 @@ import { Command } from 'commander'
 import { convertCQCodeToJSON, type SendMessageSegment } from 'node-napcat-ts'
 
 export interface PingConfig {
-  default_reply: string
+  defaultReply: string
 }
 
-export type PingCommandContext = {
-  params: { reply?: string }
+export interface PingCommandContext {
   args: [string?]
+  params: { reply?: string }
 }
 
 //           ↓ 类名固定为 Plugin        ↓ 传入配置文件的类型
 export class Plugin extends BasePlugin<PingConfig> {
-  // ↓ 需要唯一
-  name = 'ping'
-  version = '1.0.0'
-  // 和 package.json 使用一样的版本比较
-  dependencies = {
-    call: '^1.0.0',
-  }
-
   // 默认配置, 会与本地的 json 文件进行同步和补全
-  default_config: PingConfig = {
-    default_reply: 'pong',
+  defaultConfig: PingConfig = {
+    defaultReply: 'pong',
   }
 
   // 请不要在构造函数中编写逻辑, 防止意外重复触发!!!
@@ -69,9 +61,9 @@ export class Plugin extends BasePlugin<PingConfig> {
         .description('检查Bot是否在线, 并返回指定内容')
         .option('-r, --reply <content>', '要回复的内容')
         .argument('[content]', '要回复的内容'),
-      callback: this.handle_on_ping.bind(this),
+      callback: this.handlePingCommand.bind(this),
       // 根据自己喜好来
-      // callback: (options) => this.handle_on_ping(options),
+      // callback: (options) => this.handlePingCommand(options),
     })
   }
 
@@ -80,7 +72,7 @@ export class Plugin extends BasePlugin<PingConfig> {
   /**
    * 处理 ping 命令
    */
-  private async handle_on_ping({
+  private async handlePingCommand({
     context,
     params,
     args,
