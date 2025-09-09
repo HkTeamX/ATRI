@@ -17,6 +17,7 @@
     "@atri-bot/plugin-ping": "workspace:*",
     "@atri-bot/plugin-plugin-store": "workspace:*",
     "@atri-bot/plugin-the-cake-is-a-lie": "workspace:*",
+    "@atri-bot/plugin-puppeteer": "workspace:*",
     "@huan_kong/logger": "^1.0.6",
     "commander": "^14.0.0",
     "dotenv": "^17.2.2",

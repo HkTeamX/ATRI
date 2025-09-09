@@ -17,6 +17,9 @@
       ],
       "@atri-bot/plugin-the-cake-is-a-lie": [
         "../../ATRI-Official-Plugins/packages/atri-plugin-the-cake-is-a-lie/src/index.ts"
+      ],
+      "@atri-bot/plugin-puppeteer": [
+        "../../ATRI-Official-Plugins/packages/atri-plugin-puppeteer/src/index.ts"
       ]
     },
     "noEmit": true,
