@@ -1,5 +1,7 @@
 packages:
-  - packages/*
+  - ./packages/*
+  - ./ATRI-Official-Plugins/packages/*
 onlyBuiltDependencies:
   - es5-ext
   - esbuild
+  - puppeteer
