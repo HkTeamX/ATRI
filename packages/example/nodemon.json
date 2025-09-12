@@ -1,5 +1,5 @@
 {
-  "watch": ["./src", "../core/src"],
+  "watch": ["../../packages", "../../ATRI-Official-Plugins/packages"],
   "ext": ".ts",
   "ignore": [],
   "exec": "pnpm run test --debug"
