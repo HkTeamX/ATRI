@@ -88,12 +88,20 @@ _____     _/  |_   _______   |__|
       return [0, this.loadedPlugins[packageName]]
     }
 
+    // 如果正在开发模式，则优先从源代码加载
+    let importPath = [packageName, path.join(packageName, 'src/index.ts')]
+    if (this.config.debug) importPath = importPath.reverse()
+
     let module: PluginModule
     try {
-      module = await this.import(packageName)
-    } catch (error) {
-      if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 导入失败:`, error)
-      return [1, error instanceof Error ? error.message : String(error)]
+      module = await this.import(importPath[0])
+    } catch {
+      try {
+        module = await this.import(importPath[1])
+      } catch (error) {
+        if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 导入失败:`, error)
+        return [1, error instanceof Error ? error.message : String(error)]
+      }
     }
 
     if (!module.Plugin) {
