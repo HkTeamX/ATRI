@@ -1,6 +1,6 @@
 import { ATRI, type BotConfig } from '@atri-bot/core'
 import { config } from 'dotenv'
-import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
+import { Structs, type NCWebsocketOptionsHost } from 'node-napcat-ts'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -11,7 +11,7 @@ config({
 
 const debug = process.argv.includes('--debug')
 
-const bot: BotConfig = {
+const botConfig: BotConfig = {
   prefix: JSON.parse(process.env.PREFIX ?? '["/"]'),
   adminId: JSON.parse(process.env.ADMIN_ID ?? '[10001]'),
   connection: {
@@ -27,9 +27,19 @@ const bot: BotConfig = {
   },
 }
 
-await ATRI.init({
-  bot,
+const atri = await ATRI.init({
   debug,
+  bot: botConfig,
   baseDir: import.meta.dirname,
   plugins: ['@atri-bot/plugin-plugin-store'],
 })
+
+if (!debug) {
+  await Promise.all(
+    botConfig.adminId.map((id) =>
+      atri.bot.sendMsg({ message_type: 'private', user_id: id }, [
+        Structs.text('アトリは、高性能ですから！'),
+      ]),
+    ),
+  )
+}
