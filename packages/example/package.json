@@ -17,11 +17,10 @@
     "@atri-bot/plugin-ping": "workspace:*",
     "@atri-bot/plugin-plugin-store": "workspace:*",
     "@atri-bot/plugin-the-cake-is-a-lie": "workspace:*",
-    "@atri-bot/plugin-puppeteer": "workspace:*",
     "@huan_kong/logger": "^1.0.6",
-    "commander": "^14.0.0",
-    "dotenv": "^17.2.2",
-    "node-napcat-ts": "^0.4.19",
+    "commander": "^14.0.1",
+    "dotenv": "^17.2.3",
+    "node-napcat-ts": "^0.4.20",
     "nodemon": "^3.1.10"
   }
 }

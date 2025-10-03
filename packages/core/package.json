@@ -23,9 +23,9 @@
   },
   "dependencies": {
     "@huan_kong/logger": "^1.0.6",
-    "commander": "^14.0.0",
+    "commander": "^14.0.1",
     "compare-versions": "^6.1.1",
-    "node-napcat-ts": "^0.4.19",
+    "node-napcat-ts": "^0.4.20",
     "picocolors": "^1.1.1"
   }
 }
