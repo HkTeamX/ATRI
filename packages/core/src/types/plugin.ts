@@ -140,7 +140,7 @@ export abstract class BasePlugin<TConfig extends object = object> {
     this.packageJson = packageJson
     this.logger = new Logger({
       title: this.packageJson.name,
-      level: atri.config.debug ? LogLevel.DEBUG : atri.config.logLevel,
+      level: atri.config.logLevel ?? (atri.config.debug ? LogLevel.DEBUG : undefined),
     })
   }
 
