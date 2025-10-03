@@ -17,7 +17,7 @@ export class Bot extends InjectLogger {
   }
 
   private constructor(config: BotConfig, ws: NCWebsocket) {
-    super({ level: config.debug ? LogLevel.DEBUG : config.logLevel })
+    super({ level: config.logLevel ?? (config.debug ? LogLevel.DEBUG : undefined) })
     this.ws = ws
     this.config = config
 
@@ -154,7 +154,7 @@ export class Bot extends InjectLogger {
     return new Promise<Bot>((resolve, reject) => {
       const logger = new Logger({
         title: 'Bot',
-        level: config.debug ? LogLevel.DEBUG : config.logLevel,
+        level: config.logLevel ?? (config.debug ? LogLevel.DEBUG : undefined),
       })
 
       const ws = new NCWebsocket({

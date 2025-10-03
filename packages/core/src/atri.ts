@@ -17,7 +17,7 @@ export class ATRI extends InjectLogger {
   loadPluginHooks: Record<string, LoadPluginHook> = {}
 
   private constructor(config: ATRIConfig, bot: Bot) {
-    super({ level: config.debug ? LogLevel.DEBUG : config.logLevel })
+    super({ level: config.logLevel ?? (config.debug ? LogLevel.DEBUG : undefined) })
     this.config = config
     this.bot = bot
     this.configDir = config.configDir ?? path.join(config.baseDir, 'config')
@@ -25,11 +25,9 @@ export class ATRI extends InjectLogger {
   }
 
   static async init(config: ATRIConfig) {
-    if (config.debug) config.logLevel = LogLevel.DEBUG
-
     const logger = new Logger({
       title: 'ATRI',
-      level: config.debug ? LogLevel.DEBUG : config.logLevel,
+      level: config.logLevel ?? (config.debug ? LogLevel.DEBUG : undefined),
     })
 
     // 清空终端
@@ -50,6 +48,7 @@ _____     _/  |_   _______   |__|
 
     if (!('debug' in config.bot)) config.bot.debug = config.debug
     if (!('logLevel' in config.bot)) config.bot.logLevel = config.logLevel
+
     const bot = await Bot.init(config.bot)
 
     const atri = new ATRI(config, bot)
