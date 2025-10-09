@@ -9,6 +9,7 @@ export type ATRIConfig = {
   configDir?: string
   logLevel?: LogLevel
   plugins?: string[]
+  timezone?: string
 
   disableClearTerminal?: boolean
   disableStartupMessage?: boolean
