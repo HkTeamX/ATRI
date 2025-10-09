@@ -48,6 +48,7 @@ _____     _/  |_   _______   |__|
 
     if (!('debug' in config.bot)) config.bot.debug = config.debug
     if (!('logLevel' in config.bot)) config.bot.logLevel = config.logLevel
+    if (!('timezone' in config)) config.timezone = 'Asia/Shanghai'
 
     const bot = await Bot.init(config.bot)
 
@@ -56,7 +57,7 @@ _____     _/  |_   _______   |__|
     for (const packageName of config.plugins ?? []) {
       const [retCode] = await atri.loadPlugin(packageName)
       if (retCode !== 0) {
-        logger.ERROR('插件加载失败，程序终止')
+        logger.ERROR('初始插件加载失败，程序终止')
         process.exit(1)
       }
     }
