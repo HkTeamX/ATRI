@@ -10,4 +10,16 @@ export class CommanderUtils {
       return value
     }
   }
+
+  static int(value: string) {
+    const parsedValue = parseInt(value)
+    if (isNaN(parsedValue)) throw new Error(`参数 "${value}" 不是有效的整数`)
+    return parsedValue
+  }
+
+  static float(value: string) {
+    const parsedValue = parseFloat(value)
+    if (isNaN(parsedValue)) throw new Error(`参数 "${value}" 不是有效的浮点数`)
+    return parsedValue
+  }
 }
