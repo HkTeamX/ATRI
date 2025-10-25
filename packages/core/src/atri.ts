@@ -72,20 +72,22 @@ _____     _/  |_   _______   |__|
    * 1 - 失败 (返回 错误信息)
    * 2 - 加载钩子返回 false (返回 钩子名)
    */
-  async loadPlugin(
+  async loadPlugin<T extends BasePlugin = BasePlugin>(
     packageName: string,
     options?: LoadPluginOptions,
-  ): Promise<[0, BasePlugin] | [1 | 2, string]> {
+  ): Promise<[0, T] | [1 | 2, string]> {
     options = {
       initPlugin: true,
       quiet: false,
+      import: this.import,
       ...(options ?? {}),
     }
+    if (options.baseDir) options.import = createRequire(options.baseDir)
     if (!options.quiet) this.logger.INFO(`加载插件: ${packageName}`)
 
     if (this.loadedPlugins[packageName]) {
       if (!options.quiet) this.logger.WARN(`插件 ${packageName} 已加载，跳过加载`)
-      return [0, this.loadedPlugins[packageName]]
+      return [0, this.loadedPlugins[packageName] as T]
     }
 
     // 如果正在开发模式，则优先从源代码加载
@@ -94,10 +96,10 @@ _____     _/  |_   _______   |__|
 
     let module: PluginModule
     try {
-      module = await this.import(importPath[0])
+      module = await options.import!(importPath[0])
     } catch {
       try {
-        module = await this.import(importPath[1])
+        module = await options.import!(importPath[1])
       } catch (error) {
         if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 导入失败:`, error)
         return [1, error instanceof Error ? error.message : String(error)]
@@ -111,7 +113,7 @@ _____     _/  |_   _______   |__|
 
     let packageJson: PackageJson
     try {
-      const pkgPath = this.import.resolve(path.join(packageName, 'package.json'))
+      const pkgPath = options.import!.resolve(path.join(packageName, 'package.json'))
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
       packageJson = pkg
     } catch (error) {
@@ -130,7 +132,7 @@ _____     _/  |_   _______   |__|
       return [1, error instanceof Error ? error.message : String(error)]
     }
 
-    if (!options.initPlugin) return [0, plugin]
+    if (!options.initPlugin) return [0, plugin as T]
 
     try {
       // 触发加载钩子
@@ -161,7 +163,7 @@ _____     _/  |_   _______   |__|
       this.loadedPlugins[packageName] = plugin
       if (!options.quiet) this.logger.INFO(`插件 ${packageName} 加载成功`)
 
-      return [0, plugin]
+      return [0, plugin as T]
     } catch (error) {
       if (!options.quiet) this.logger.ERROR(`插件 ${packageName} 加载失败:`, error)
       return [1, error instanceof Error ? error.message : String(error)]

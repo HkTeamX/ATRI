@@ -29,4 +29,6 @@ export type LoadPluginHook = (context: LoadPluginHookContext) => Promise<boolean
 export interface LoadPluginOptions {
   initPlugin?: boolean
   quiet?: boolean
+  import?: NodeJS.Require
+  baseDir?: string
 }
