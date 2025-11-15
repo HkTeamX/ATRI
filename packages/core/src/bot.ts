@@ -349,7 +349,15 @@ export class Bot extends InjectLogger {
    */
   getCommandHelpInformation(commandName: string) {
     // 搜索命令
-    const foundEvent = this.events.command.find((cmd) => cmd.commandName.toString() === commandName)
+    const foundEvent = this.events.command.find((cmd) => {
+      if (cmd.commandName === '*') return false
+      if (typeof cmd.commandName === 'string') {
+        return cmd.commandName === commandName
+      } else if (cmd.commandName instanceof RegExp) {
+        return cmd.commandName.test(commandName)
+      }
+      return false
+    })
     if (!foundEvent || !foundEvent.commander) return undefined
 
     const resolvedCommandName = this.getCommandInfo(
