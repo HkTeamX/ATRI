@@ -30,6 +30,7 @@ const botConfig: BotConfig = {
 const atri = await ATRI.init({
   debug,
   bot: botConfig,
+  logRecorder: { enable: true },
   baseDir: import.meta.dirname,
   plugins: ['@atri-bot/plugin-plugin-store'],
 })
