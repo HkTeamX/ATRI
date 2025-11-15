@@ -374,7 +374,7 @@ export class Bot extends InjectLogger {
       )
       .helpOption('-h, --help', '展示帮助信息')
       .helpInformation()
-      .replace('default:', '默认值:')
+      .replaceAll('default:', '默认值:')
       .replace('Arguments:', '参数:')
       .replace('Options:', '选项:')
       .replace('Usage:', '用法:')
