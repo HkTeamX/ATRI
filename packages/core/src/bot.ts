@@ -349,7 +349,15 @@ export class Bot extends InjectLogger {
    */
   getCommandHelpInformation(commandName: string) {
     // 搜索命令
-    const foundEvent = this.events.command.find((cmd) => cmd.commandName.toString() === commandName)
+    const foundEvent = this.events.command.find((cmd) => {
+      if (cmd.commandName === '*') return false
+      if (typeof cmd.commandName === 'string') {
+        return cmd.commandName === commandName
+      } else if (cmd.commandName instanceof RegExp) {
+        return cmd.commandName.test(commandName)
+      }
+      return false
+    })
     if (!foundEvent || !foundEvent.commander) return undefined
 
     const resolvedCommandName = this.getCommandInfo(
@@ -366,7 +374,7 @@ export class Bot extends InjectLogger {
       )
       .helpOption('-h, --help', '展示帮助信息')
       .helpInformation()
-      .replace('default:', '默认值:')
+      .replaceAll('default:', '默认值:')
       .replace('Arguments:', '参数:')
       .replace('Options:', '选项:')
       .replace('Usage:', '用法:')
