@@ -42,7 +42,7 @@ export class Bot extends InjectLogger {
       if (context.message.length === 0) return
       // 调试模式下非管理员消息不处理
       if (this.config.debug && !this.config.adminId.includes(context.user_id)) {
-        this.logger.DEBUG('当前处于调试模式, 非管理员消息, 已跳过处理流程:', context)
+        this.logger.DEBUG('当前处于调试模式, 非管理员消息, 已跳过处理流程')
         return
       }
 
