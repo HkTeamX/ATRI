@@ -78,4 +78,6 @@ await ATRI.init({
 
 后续参数需求等, 请使用 `/help` 命令等查询
 
-如使用 `/help` 命令出现无反应, 请检查控制台输出, 大概率时因为 `pupoteer` 没有找到可用的 `chrome`, 手动安装一下即可!
+如使用 `/help` 命令出现无反应, 请检查控制台输出
+
+大概率时因为 `pupoteer` 没有找到可用的 `chrome`, 根据控制台提示执行命令 `pnpx puppeteer browsers install chrome` 手动安装即可
