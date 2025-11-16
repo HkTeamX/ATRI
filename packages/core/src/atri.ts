@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { Bot } from './bot.js'
+import { LogRecorder } from './logRecorder.js'
 import type { ATRIConfig, LoadPluginHook, LoadPluginOptions, PluginModule } from './types/atri.js'
 import type { BasePlugin, PackageJson } from './types/plugin.js'
 
@@ -11,15 +12,17 @@ export class ATRI extends InjectLogger {
   config: ATRIConfig
   configDir: string
   bot: Bot
+  logRecorder: LogRecorder
   import: NodeJS.Require
 
   loadedPlugins: Record<string, BasePlugin> = {}
   loadPluginHooks: Record<string, LoadPluginHook> = {}
 
-  private constructor(config: ATRIConfig, bot: Bot) {
+  private constructor(config: ATRIConfig, bot: Bot, logRecorder: LogRecorder) {
     super({ level: config.logLevel ?? (config.debug ? LogLevel.DEBUG : undefined) })
     this.config = config
     this.bot = bot
+    this.logRecorder = logRecorder
     this.configDir = config.configDir ?? path.join(config.baseDir, 'config')
     this.import = createRequire(config.baseDir)
   }
@@ -43,6 +46,12 @@ _____     _/  |_   _______   |__|
      \\/`,
         `font-family: Consolas;`,
       )
+    }
+
+    // 实例化 logRecorder 开始记录日志
+    const logRecorder = new LogRecorder(config, config.logRecorder ?? {})
+
+    if (!config.disableStartupMessage) {
       logger.INFO(`アトリは、高性能ですから！`)
     }
 
@@ -52,7 +61,7 @@ _____     _/  |_   _______   |__|
 
     const bot = await Bot.init(config.bot)
 
-    const atri = new ATRI(config, bot)
+    const atri = new ATRI(config, bot, logRecorder)
 
     for (const packageName of config.plugins ?? []) {
       const [retCode] = await atri.loadPlugin(packageName)
@@ -80,7 +89,7 @@ _____     _/  |_   _______   |__|
       initPlugin: true,
       quiet: false,
       import: this.import,
-      ...(options ?? {}),
+      ...options,
     }
     if (options.baseDir) options.import = createRequire(options.baseDir)
     if (!options.quiet) this.logger.INFO(`加载插件: ${packageName}`)

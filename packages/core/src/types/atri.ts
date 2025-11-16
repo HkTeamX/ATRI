@@ -1,9 +1,12 @@
 import type { LogLevel } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
+import type { LogRecorderConfig } from './logRecorder.js'
 import type { BasePlugin } from './plugin.js'
 
 export type ATRIConfig = {
   bot: BotConfig
+  logRecorder?: LogRecorderConfig
+
   debug?: boolean
   baseDir: string
   configDir?: string

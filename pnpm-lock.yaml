@@ -94,8 +94,11 @@ importers:
   ATRI-Official-Plugins/packages/atri-plugin-help:
     dependencies:
       '@atri-bot/core':
-        specifier: ^1.1.15
-        version: 1.1.15
+        specifier: ^1.1.21
+        version: 1.1.21
+      '@atri-bot/lib-puppeteer':
+        specifier: ^1.1.11
+        version: 1.1.11(typescript@5.9.3)
       commander:
         specifier: ^14.0.1
         version: 14.0.1
@@ -107,7 +110,7 @@ importers:
     dependencies:
       '@atri-bot/core':
         specifier: ^1.1.15
-        version: 1.1.15
+        version: 1.1.21
       commander:
         specifier: ^14.0.1
         version: 14.0.1
@@ -119,7 +122,7 @@ importers:
     dependencies:
       '@atri-bot/core':
         specifier: ^1.1.15
-        version: 1.1.15
+        version: 1.1.21
       commander:
         specifier: ^14.0.1
         version: 14.0.1
@@ -134,7 +137,7 @@ importers:
     dependencies:
       '@atri-bot/core':
         specifier: ^1.1.15
-        version: 1.1.15
+        version: 1.1.21
       commander:
         specifier: ^14.0.1
         version: 14.0.1
@@ -277,8 +280,11 @@ packages:
     resolution: {integrity: sha512-6beG+egPwXmvhAg+m0STCj+ZssDcjrLzf4L05aKm2nGglMXSSPz0cH/rM+kVD9krNfldiMctURd4wjojW1fV0w==}
     engines: {node: '>= 14.0.0'}
 
-  '@atri-bot/core@1.1.15':
-    resolution: {integrity: sha512-SWO2IYNFjjf3iRJ/UQlGAIBK/3svQ+6NzHjcSLnssB98favJnC+S1HgeBRjnIv0TUAv5r/DBvtzbCUVsVe+JDA==}
+  '@atri-bot/core@1.1.21':
+    resolution: {integrity: sha512-EaYA77gRJwdOtLsmSTsqiEF4fGeJH9vUBReMvKUF/dXnW+vPJlVsAGAaRBXcxdZIAfpNs8lq9A7daKvlg6fH0Q==}
+
+  '@atri-bot/lib-puppeteer@1.1.11':
+    resolution: {integrity: sha512-VfRRj9n4jkbSKuCjwKOfRSUAe335+Rj2z9CzpraYHurexS+qpimx+YHh5ct3Msp2Fc6kZIMKuikLrQEpjrjfLQ==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -2116,6 +2122,7 @@ packages:
 
   mathjax-full@3.2.2:
     resolution: {integrity: sha512-+LfG9Fik+OuI8SLwsiR02IVdjcnRCy5MufYLi0C3TdMT56L/pjB0alMVGgoWJF8pN9Rc7FESycZB9BMNWIid5w==}
+    deprecated: Version 4 replaces this package with the scoped package @mathjax/src
 
   mdast-util-to-hast@13.2.0:
     resolution: {integrity: sha512-QGYKEuUsYT9ykKBCMOEDLsU5JRObWQusAolFMeko/tYPufNkRffBAQjIE+99jbA87xv6FgmjLtwjh9wBWajwAA==}
@@ -3241,7 +3248,7 @@ snapshots:
     dependencies:
       '@algolia/client-common': 5.39.0
 
-  '@atri-bot/core@1.1.15':
+  '@atri-bot/core@1.1.21':
     dependencies:
       '@huan_kong/logger': 1.0.6
       commander: 14.0.1
@@ -3250,6 +3257,19 @@ snapshots:
       picocolors: 1.1.1
     transitivePeerDependencies:
       - bufferutil
+      - utf-8-validate
+
+  '@atri-bot/lib-puppeteer@1.1.11(typescript@5.9.3)':
+    dependencies:
+      '@huan_kong/logger': 1.0.6
+      ejs: 3.1.10
+      puppeteer: 24.23.0(typescript@5.9.3)
+    transitivePeerDependencies:
+      - bare-buffer
+      - bufferutil
+      - react-native-b4a
+      - supports-color
+      - typescript
       - utf-8-validate
 
   '@babel/code-frame@7.27.1':
