@@ -41,7 +41,10 @@ export class Bot extends InjectLogger {
       // 过滤空消息
       if (context.message.length === 0) return
       // 调试模式下非管理员消息不处理
-      if (this.config.debug && !this.config.adminId.includes(context.user_id)) return
+      if (this.config.debug && !this.config.adminId.includes(context.user_id)) {
+        this.logger.DEBUG('当前处于调试模式, 非管理员消息, 已跳过处理流程:', context)
+        return
+      }
 
       const endpoint = `message.${context.message_type}.${context.sub_type}`
       const isAdmin = this.config.adminId.includes(context.user_id)
