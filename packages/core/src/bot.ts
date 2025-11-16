@@ -64,7 +64,12 @@ export class Bot extends InjectLogger {
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.packageName} message 事件处理失败:`, error)
+            await this.sendMsg(context, [
+              Structs.text(
+                `插件 ${event.packageName} message 事件处理失败, 请联系管理员处理: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+              ),
+            ])
           }
         }
       }
@@ -103,7 +108,12 @@ export class Bot extends InjectLogger {
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.packageName} command 事件处理失败:`, error)
+            await this.sendMsg(context, [
+              Structs.text(
+                `插件 ${event.packageName} command 事件处理失败, 请联系管理员处理: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+              ),
+            ])
           }
         }
       }
@@ -122,6 +132,11 @@ export class Bot extends InjectLogger {
             }
           } catch (error) {
             this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
+            await this.sendMsg({ message_type: 'private', user_id: this.config.adminId[0] }, [
+              Structs.text(
+                `插件 ${event.packageName} request 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+              ),
+            ])
           }
         }
       }
@@ -146,10 +161,23 @@ export class Bot extends InjectLogger {
               break
             }
           } catch (error) {
-            this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
+            this.logger.ERROR(`插件 ${event.packageName} notice 事件处理失败:`, error)
+            await this.sendMsg({ message_type: 'private', user_id: this.config.adminId[0] }, [
+              Structs.text(
+                `插件 ${event.packageName} notice 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+              ),
+            ])
           }
         }
       }
+    })
+
+    process.on('uncaughtException', (err) => {
+      this.sendMsg({ message_type: 'private', user_id: this.config.adminId[0] }, [
+        Structs.text(
+          `捕获到未处理的异常, 机器人将退出, 错误信息: \n${err instanceof Error ? (err.stack ?? err.message) : String(err)}, 请前往后台检查`,
+        ),
+      ])
     })
 
     this.logger.INFO(`Bot 初始化完成`)
