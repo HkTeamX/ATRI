@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /guide/install
+      link: /guide/use
     - theme: alt
       text: GitHub
       link: https://github.com/HkTeamX/ATRI

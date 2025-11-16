@@ -50,11 +50,6 @@ export const zh = defineConfig({
 function nav(): DefaultTheme.NavItem[] {
   return [
     {
-      text: '安装',
-      link: '/guide/install',
-      activeMatch: '/guide/install',
-    },
-    {
       text: '使用',
       link: '/guide/use',
       activeMatch: '/guide/use',
@@ -73,7 +68,6 @@ function sidebarGuide(): DefaultTheme.SidebarItem[] {
       text: '快速开始',
       collapsed: false,
       items: [
-        { text: '安装', link: 'install' },
         { text: '使用', link: 'use' },
         { text: '开发插件', link: 'plugins' },
       ],

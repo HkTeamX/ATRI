@@ -1,6 +1,10 @@
 # 开发插件
 
-更多示例可以参考 [ATRI-Official-Plugins](https://github.com/HkTeamX/ATRI-Official-Plugins)
+更多示例可以参考
+
+[ATRI-Official-Plugins](https://github.com/HkTeamX/ATRI-Official-Plugins)
+
+[Minato-Official-Plugins](https://github.com/HkTeamX/Minato-Official-Plugins)
 
 ```ts
 import { BasePlugin, type CommandCallback } from '@atri-bot/core'

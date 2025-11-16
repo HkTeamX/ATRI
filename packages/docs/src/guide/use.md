@@ -1,42 +1,81 @@
 # 使用
 
-推荐安装基础插件 `@atri-bot/plugin-plugin-store` 后续插件通过此插件安装
+## 1.安装 NapcatQQ
+
+详见 [NapCatQQ文档](https://napneko.github.io/guide/start-install)
+
+## 2.安装 ATRI
+
+全部推荐使用 `pnpm`, 不过大部分市面上的包管理工具理论上都支持
+
+::: code-group
+
+```sh [pnpm]
+pnpm add @atri-bot/core
+```
+
+:::
+
+## 3.配置 ATRI
+
+按照 `NapCatQQ` 文档创建一个 `正向连接/服务端` 模式的连接
+
+## 4.安装 ATRI 基础插件
+
+此为插件管理插件, 可用于自启时自动加载指定插件, 安装, 禁用 插件等操作
+
+::: code-group
+
+```sh [pnpm]
+pnpm add @atri-bot/plugin-plugin-store
+```
+
+:::
+
+## 5.连接 NapCatQQ
 
 ```ts
-// 导入 ATRI 类
 import { ATRI, type BotConfig } from '@atri-bot/core'
-import { config } from 'dotenv'
 import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import path from 'node:path'
-import process from 'node:process'
-
-config({
-  path: path.join(import.meta.dirname, '../.env'),
-  quiet: true,
-})
-
-const debug = process.argv.includes('--debug')
 
 const bot: BotConfig = {
-  prefix: JSON.parse(process.env.PREFIX ?? '["/"]'),
-  adminId: JSON.parse(process.env.ADMIN_ID ?? '[10001]'),
+  // 命令前缀
+  prefix: ['/'],
+  // 管理员ID
+  adminId: [10001],
+  // NapCatQQ 后端配置
   connection: {
-    protocol: (process.env.NC_PROTOCOL ?? 'ws') as NCWebsocketOptionsHost['protocol'],
-    host: process.env.NC_HOST ?? '127.0.0.1',
-    port: parseInt(process.env.NC_PORT ?? '3001'),
-    accessToken: process.env.NC_ACCESS_TOKEN,
+    protocol: 'ws',
+    host: '127.0.0.1',
+    port: 3001,
+    accessToken: '',
   },
+  // 自动重连配置
   reconnection: {
-    enable: process.env.NC_RECONNECTION_ENABLE === 'true',
-    attempts: parseInt(process.env.NC_RECONNECTION_ATTEMPTS ?? '10'),
-    delay: parseInt(process.env.NC_RECONNECTION_DELAY ?? '5000'),
+    enable: true,
+    attempts: 10,
+    delay: 5000,
   },
 }
 
+// 进行初始化
 await ATRI.init({
   bot,
-  debug,
+  // 是否开启调试模式
+  debug: true,
+  // 必填参数, 用于配置 node_modules 的加载路径, 一般直接按照下方的直接使用即可
   baseDir: import.meta.dirname,
+  // 初始化时自动加载的插件
+  // 我们加载上前面说的插件管理插件
   plugins: ['@atri-bot/plugin-plugin-store'],
 })
 ```
+
+## 6.安装剩余基础插件
+
+向机器人发送 `/插件管理 安装 @atri-bot/plugin-help` 来安装帮助指令的插件
+
+后续参数需求等, 请使用 `/help` 命令等查询
+
+如使用 `/help` 命令出现无反应, 请检查控制台输出, 大概率时因为 `pupoteer` 没有找到可用的 `chrome`, 手动安装一下即可!
