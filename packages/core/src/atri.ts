@@ -99,7 +99,7 @@ _____     _/  |_   _______   |__|
       return [0, this.loadedPlugins[packageName] as T]
     }
 
-    // 如果正在开发模式，则优先从源代码加载
+    // 如果正在调试模式，则优先从源代码加载
     let importPath = [packageName, path.join(packageName, 'src/index.ts')]
     if (this.config.debug) importPath = importPath.reverse()
 
