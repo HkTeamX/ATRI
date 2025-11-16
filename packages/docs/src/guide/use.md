@@ -81,3 +81,5 @@ await ATRI.init({
 如使用 `/help` 命令出现无反应, 请检查控制台输出
 
 大概率时因为 `pupoteer` 没有找到可用的 `chrome`, 根据控制台提示执行命令 `pnpx puppeteer browsers install chrome` 手动安装即可
+
+推荐国内用户安装 `@atri-bot/plugin-proxy` 使用全局代理功能, 否则可能部分请求无法成功
