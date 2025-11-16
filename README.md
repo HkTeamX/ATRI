@@ -7,3 +7,5 @@
 取名来自 [亚托莉(ATRI)](https://mzh.moegirl.org.cn/%E4%BA%9A%E6%89%98%E8%8E%89)
 
 ## 🎉 [更新日志](./CHANGELOG.md)
+
+## 📑 [开发文档](https://atri.huankong.top)
