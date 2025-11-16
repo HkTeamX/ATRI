@@ -16,7 +16,7 @@ export class LogRecorder extends InjectLogger {
     this.config = config
 
     if (atriConfig.debug && !config.enable) {
-      this.logger.WARN('当前处于开发模式, 如需记录日志, 请将 logRecorder.enable 设为 true')
+      this.logger.WARN('当前处于调试模式, 如需记录日志, 请将 logRecorder.enable 设为 true')
       return
     }
 

@@ -21,29 +21,23 @@ export class Bot extends InjectLogger {
     this.ws = ws
     this.config = config
 
-    if (config.debug) {
-      ws.on('api.preSend', (context) => this.logger.DEBUG('发送API请求', context))
-      ws.on('api.response.success', (context) => this.logger.DEBUG('收到API成功响应', context))
-      ws.on('api.response.failure', (context) => this.logger.DEBUG('收到API失败响应', context))
-      ws.on('message', (context) => {
-        // 过滤空消息
-        if (context.message.length === 0) {
-          this.logger.DEBUG('收到空消息, 已跳过处理流程:', context)
-          return
-        }
-        this.logger.DEBUG('收到消息:', context)
-      })
-      ws.on('request', (context) => this.logger.DEBUG('收到请求:', context))
-      ws.on('notice', (context) => this.logger.DEBUG('收到通知:', context))
-    }
+    ws.on('api.preSend', (context) => this.logger.DEBUG('发送API请求', context))
+    ws.on('api.response.success', (context) => this.logger.DEBUG('收到API成功响应', context))
+    ws.on('api.response.failure', (context) => this.logger.DEBUG('收到API失败响应', context))
 
     ws.on('message', async (context) => {
       // 过滤空消息
-      if (context.message.length === 0) return
+      if (context.message.length === 0) {
+        this.logger.DEBUG('收到空消息, 已跳过处理流程:', context)
+        return
+      }
+
       // 调试模式下非管理员消息不处理
       if (this.config.debug && !this.config.adminId.includes(context.user_id)) {
-        this.logger.DEBUG('当前处于调试模式, 非管理员消息, 已跳过处理流程')
+        this.logger.DEBUG('当前处于调试模式, 非管理员消息, 已跳过处理流程:', context)
         return
+      } else {
+        this.logger.DEBUG('收到消息:', context)
       }
 
       const endpoint = `message.${context.message_type}.${context.sub_type}`
@@ -120,6 +114,8 @@ export class Bot extends InjectLogger {
     })
 
     ws.on('request', async (context) => {
+      this.logger.DEBUG('收到请求:', context)
+
       const endpoint = `request.${context.request_type}.${'sub_type' in context ? context.sub_type : ''}`
 
       for (const event of this.events.request) {
@@ -143,6 +139,8 @@ export class Bot extends InjectLogger {
     })
 
     ws.on('notice', async (context) => {
+      this.logger.DEBUG('收到通知:', context)
+
       let endpoint = `notice.${context.notice_type}.${'sub_type' in context ? context.sub_type : ''}`
       if (context.notice_type === 'notify') {
         if (context.sub_type === 'input_status') {
