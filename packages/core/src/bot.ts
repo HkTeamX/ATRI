@@ -55,7 +55,7 @@ export class Bot extends InjectLogger {
             const result = await event.callback({ context })
             if (result === 'quit') {
               this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
-              break
+              return
             }
           } catch (error) {
             this.logger.ERROR(`插件 ${event.packageName} message 事件处理失败:`, error)
@@ -99,7 +99,7 @@ export class Bot extends InjectLogger {
             })
             if (result === 'quit') {
               this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
-              break
+              return
             }
           } catch (error) {
             this.logger.ERROR(`插件 ${event.packageName} command 事件处理失败:`, error)
@@ -124,7 +124,7 @@ export class Bot extends InjectLogger {
             const result = await event.callback({ context })
             if (result === 'quit') {
               this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
-              break
+              return
             }
           } catch (error) {
             this.logger.ERROR(`插件 ${event.packageName} 事件处理失败:`, error)
@@ -156,7 +156,7 @@ export class Bot extends InjectLogger {
             const result = await event.callback({ context })
             if (result === 'quit') {
               this.logger.DEBUG(`插件 ${event.packageName} 请求提前终止`)
-              break
+              return
             }
           } catch (error) {
             this.logger.ERROR(`插件 ${event.packageName} notice 事件处理失败:`, error)
