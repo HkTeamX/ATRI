@@ -266,6 +266,18 @@ export class Bot extends InjectLogger {
     }
   }
 
+  parseArgs(str: string): string[] {
+    const regex = /"([^"]*)"|'([^']*)'|(\S+)/g
+    const result: string[] = []
+    let match
+
+    while ((match = regex.exec(str)) !== null) {
+      result.push(match[1] || match[2] || match[3])
+    }
+
+    return result
+  }
+
   /**
    * 解析命令
    * @param rawMessage 原始消息
@@ -283,7 +295,7 @@ export class Bot extends InjectLogger {
     const prefix = this.config.prefix.find((p) => p === firstChar)
     if (!prefix) return [1, '未匹配到前缀']
 
-    const parts = rawMessage.split(' ')
+    const parts = this.parseArgs(rawMessage)
     if (parts.length === 0) return [1, '命令信息未空']
 
     const cmdName = parts[0].slice(prefix.length)
