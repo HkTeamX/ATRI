@@ -3,7 +3,7 @@ import type { BotConfig } from './bot.js'
 import type { LogRecorderConfig } from './logRecorder.js'
 import type { BasePlugin } from './plugin.js'
 
-export type ATRIConfig = {
+export interface ATRIConfig {
   bot: BotConfig
   logRecorder?: LogRecorderConfig
 
@@ -14,7 +14,6 @@ export type ATRIConfig = {
   plugins?: string[]
   timezone?: string
 
-  disableClearTerminal?: boolean
   disableStartupMessage?: boolean
 }
 

@@ -1,6 +1,6 @@
 import type { LogLevel } from '@huan_kong/logger'
 
-export type LogRecorderConfig = {
+export interface LogRecorderConfig {
   enable?: boolean
   maxFiles?: number
   logLevel?: LogLevel

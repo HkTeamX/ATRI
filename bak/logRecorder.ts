@@ -1,8 +1,9 @@
-import { InjectLogger, LogLevel } from '@huan_kong/logger'
-import fs from 'node:fs'
-import path from 'node:path'
 import type { ATRIConfig } from './types/atri.js'
 import type { LogRecorderConfig } from './types/logRecorder.js'
+import fs from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import { InjectLogger, LogLevel } from '@huan_kong/logger'
 
 export class LogRecorder extends InjectLogger {
   config: LogRecorderConfig
@@ -51,11 +52,12 @@ export class LogRecorder extends InjectLogger {
     })
   }
 
+  // eslint-disable-next-line no-control-regex
+  stripAnsiRegexp = /\u001B\[[0-9;]*m/g
   stripAnsi(str: string) {
     return str.replace(
       // 匹配所有 ANSI 转义序列
-      // eslint-disable-next-line no-control-regex
-      /\u001B\[[0-9;]*m/g,
+      this.stripAnsiRegexp,
       '',
     )
   }
@@ -67,32 +69,36 @@ export class LogRecorder extends InjectLogger {
       })
       .join(' ')
 
-    if (!fs.existsSync(this.config.logDir!)) fs.mkdirSync(this.config.logDir!, { recursive: true })
+    if (!fs.existsSync(this.config.logDir!))
+      fs.mkdirSync(this.config.logDir!, { recursive: true })
 
     const logFilePath = path.join(
       this.config.logDir!,
       `${new Date().toISOString().split('T')[0]}.log`,
     )
-    if (!fs.existsSync(logFilePath)) this.removeUselessLogs()
+    if (!fs.existsSync(logFilePath))
+      this.removeUselessLogs()
 
-    fs.appendFileSync(logFilePath, strippedArgs + '\n', { encoding: 'utf-8' })
+    fs.appendFileSync(logFilePath, `${strippedArgs}\n`, { encoding: 'utf-8' })
   }
 
+  dateRegex = /^\d{4}-\d{2}-\d{2}/
   removeUselessLogs() {
     const files = fs.readdirSync(this.config.logDir!).filter((file) => {
       return (
-        /^\d{4}-\d{2}-\d{2}/.test(file) &&
-        fs.statSync(path.join(this.config.logDir!, file)).isFile()
+        this.dateRegex.test(file)
+        && fs.statSync(path.join(this.config.logDir!, file)).isFile()
       )
     })
 
-    if (files.length <= this.config.maxFiles!) return
+    if (files.length <= this.config.maxFiles!)
+      return
 
     const filesToDeleteCount = files.length - this.config.maxFiles! + 1
 
     files
       .sort()
       .slice(0, filesToDeleteCount)
-      .map((file) => fs.rmSync(path.join(this.config.logDir!, file)))
+      .map(file => fs.rmSync(path.join(this.config.logDir!, file)))
   }
 }

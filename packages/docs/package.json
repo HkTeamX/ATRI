@@ -1,14 +1,12 @@
 {
   "name": "@atri-bot/docs",
+  "type": "module",
   "description": "docs for atri framework",
   "author": "huankong233",
   "license": "MIT",
-  "type": "module",
   "scripts": {
     "dev": "vitepress dev src",
-    "build": "vitepress build src",
-    "preview": "vitepress preview src",
-    "clean": "rimraf src/.vitepress/dist src/.vitepress/cache"
+    "build": "vitepress build src"
   },
   "dependencies": {
     "vitepress": "^1.6.4"

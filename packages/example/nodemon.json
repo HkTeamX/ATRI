@@ -1,6 +1,6 @@
 {
-  "watch": ["../../packages", "../../ATRI-Official-Plugins/packages"],
+  "watch": ["..", "../../plugins"],
   "ext": ".ts",
   "ignore": [],
-  "exec": "pnpm run test --debug"
+  "exec": "bun run start --debug"
 }

@@ -1,0 +1,23 @@
+{
+  "name": "@atri-bot/lib-cron",
+  "type": "module",
+  "version": "1.1.5",
+  "description": "cron lib for atri framework",
+  "author": "huan_kong",
+  "license": "MIT",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "./dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "lint": "eslint",
+    "type-check": "tsc --noEmit -p tsconfig.json --composite false"
+  },
+  "dependencies": {
+    "@huan_kong/logger": "^1.0.6",
+    "cron": "^4.4.0",
+    "cron-validate": "^1.5.3"
+  }
+}

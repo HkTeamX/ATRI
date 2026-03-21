@@ -1,0 +1,26 @@
+{
+  "name": "@atri-bot/plugin-help",
+  "type": "module",
+  "version": "1.1.11",
+  "description": "help plugin for atri framework",
+  "author": "huan_kong",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "./dist/**/*"
+  ],
+  "scripts": {
+    "build": "pnpm run type-check && pnpm run lint && tsup",
+    "clean": "rimraf dist",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "type-check": "tsc --noEmit -p tsconfig.json --composite false"
+  },
+  "dependencies": {
+    "@atri-bot/core": "^1.1.21",
+    "@atri-bot/lib-puppeteer": "^1.1.11",
+    "commander": "^14.0.1",
+    "node-napcat-ts": "^0.4.20"
+  }
+}

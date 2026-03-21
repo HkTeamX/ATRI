@@ -1,10 +1,10 @@
-import { Logger, LogLevel } from '@huan_kong/logger'
 import type { Command } from 'commander'
 import type { MessageHandler, NCWebsocket, NoticeHandler, RequestHandler } from 'node-napcat-ts'
 import type { ATRI } from '../atri.js'
 import type { Bot } from '../bot.js'
 import type { UnRegHandler } from './bot.js'
 import type { RemoveField } from './utils.js'
+import { Logger, LogLevel } from '@huan_kong/logger'
 
 export interface PackageJson {
   name: string
@@ -15,9 +15,7 @@ export interface PackageJson {
 export type CallbackReturnType = void | 'quit'
 export type CallbackReturn = Promise<CallbackReturnType> | CallbackReturnType
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type OptionParams = Record<string, any>
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type OptionArgs = any[]
 
 export interface CommandContext {

@@ -1,15 +1,14 @@
 {
   "name": "@atri-bot/example",
+  "type": "module",
   "description": "example for atri framework",
   "author": "huankong233",
   "license": "MIT",
-  "type": "module",
   "scripts": {
     "dev": "nodemon",
-    "test": "tsx ./src/index.ts",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix",
-    "type-check": "tsc --noEmit -p tsconfig.json --composite false"
+    "start": "bun run ./src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
     "@atri-bot/core": "workspace:*",
@@ -17,10 +16,8 @@
     "@atri-bot/plugin-ping": "workspace:*",
     "@atri-bot/plugin-plugin-store": "workspace:*",
     "@atri-bot/plugin-the-cake-is-a-lie": "workspace:*",
-    "@huan_kong/logger": "^1.0.6",
-    "commander": "^14.0.1",
-    "dotenv": "^17.2.3",
-    "node-napcat-ts": "^0.4.20",
-    "nodemon": "^3.1.10"
+    "@huan_kong/logger": "^2.0.1",
+    "node-napcat-ts": "^0.4.23",
+    "nodemon": "^3.1.14"
   }
 }

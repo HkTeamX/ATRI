@@ -5,7 +5,7 @@ export class CommanderUtils {
     return function (value: string) {
       if (!options.includes(value)) {
         throw new Error(
-          `参数 "${value}" 不是有效参数, 有效参数: \n${options.map((item) => ` - ${item}`).join('\n')}`,
+          `参数 "${value}" 不是有效参数, 有效参数: \n${options.map(item => ` - ${item}`).join('\n')}`,
         )
       }
 
@@ -15,8 +15,9 @@ export class CommanderUtils {
 
   static int(options: CommanderTransformOptions = {}) {
     return function (value: string) {
-      const parsedValue = parseInt(value)
-      if (isNaN(parsedValue)) throw new Error(`参数 "${value}" 不是有效的整数`)
+      const parsedValue = Number.parseInt(value)
+      if (Number.isNaN(parsedValue))
+        throw new Error(`参数 "${value}" 不是有效的整数`)
       if (options.min !== undefined && parsedValue < options.min) {
         throw new Error(`参数 "${value}" 不能小于 ${options.min}`)
       }
@@ -29,8 +30,9 @@ export class CommanderUtils {
 
   static float(options: CommanderTransformOptions = {}) {
     return function (value: string) {
-      const parsedValue = parseFloat(value)
-      if (isNaN(parsedValue)) throw new Error(`参数 "${value}" 不是有效的浮点数`)
+      const parsedValue = Number.parseFloat(value)
+      if (Number.isNaN(parsedValue))
+        throw new Error(`参数 "${value}" 不是有效的浮点数`)
       if (options.min !== undefined && parsedValue < options.min) {
         throw new Error(`参数 "${value}" 不能小于 ${options.min}`)
       }

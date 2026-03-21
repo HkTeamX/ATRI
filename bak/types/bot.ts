@@ -10,7 +10,7 @@ import type {
 } from './plugin.js'
 import type { NonEmptyArray, RemoveField } from './utils.js'
 
-export type BotConfig = {
+export interface BotConfig {
   debug?: boolean
   logLevel?: LogLevel
   prefix: NonEmptyArray<string>

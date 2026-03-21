@@ -1,0 +1,25 @@
+{
+  "name": "@atri-bot/lib-request",
+  "type": "module",
+  "version": "1.1.12",
+  "description": "request lib for atri framework",
+  "author": "huan_kong",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "./dist/**/*"
+  ],
+  "scripts": {
+    "build": "pnpm run type-check && pnpm run lint && tsup",
+    "clean": "rimraf dist",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "type-check": "tsc --noEmit -p tsconfig.json --composite false"
+  },
+  "dependencies": {
+    "@huan_kong/logger": "^1.0.6",
+    "axios": "^1.12.2",
+    "axios-retry": "^4.5.0"
+  }
+}
