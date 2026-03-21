@@ -20,6 +20,10 @@ export class ATRI {
   plugins: { [key: string]: Plugin<any> } = {}
   configs: { [key: string]: any } = {}
 
+  private normalizeConfigKey(pluginName: string) {
+    return pluginName.replaceAll('/', '__')
+  }
+
   constructor(config: ATRIConfig) {
     this.config = config
     this.logger = new Logger({
@@ -72,6 +76,11 @@ export class ATRI {
       return
     }
 
+    const unloaders = this.bot.unloaders[pluginName] ?? []
+    for (const unload of unloaders) {
+      unload()
+    }
+
     await plugin.uninstall()
     delete this.plugins[pluginName]
     this.logger.INFO(`插件 ${pluginName} 卸载成功`)
@@ -82,13 +91,14 @@ export class ATRI {
       return {} as T
     }
 
+    pluginName = this.normalizeConfigKey(pluginName)
+
     if (!refresh) {
       return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
     }
 
     await fs.ensureDir(this.config.configDir)
 
-    pluginName = pluginName.replaceAll('/', '__')
     const configPath = path.join(this.config.configDir, `${pluginName}.json`)
 
     if (!await fs.exists(configPath)) {
@@ -109,7 +119,10 @@ export class ATRI {
   }
 
   async saveConfig<T extends object>(pluginName: string, config: T) {
-    pluginName = pluginName.replaceAll('/', '__')
+    pluginName = this.normalizeConfigKey(pluginName)
+
+    await fs.ensureDir(this.config.configDir)
+
     const configPath = path.join(this.config.configDir, `${pluginName}.json`)
     await fs.writeJSON(configPath, config, { spaces: 2 })
 

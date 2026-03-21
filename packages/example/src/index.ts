@@ -2,13 +2,15 @@ import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import process from 'node:process'
 import { ATRI, definePlugin } from '@atri-bot/core'
 import { LogLevel } from '@huan_kong/logger'
+import { Structs } from 'node-napcat-ts'
+import yargs from 'yargs'
 
 const debug = process.argv.includes('--debug')
 
 const plugin = definePlugin({
   pluginName: '示例插件',
   install() {
-    this.regCommandEvent({
+    this.regMessageEvent({
       endPoint: 'message.private.friend',
       callback: async (message) => {
         this.logger.INFO('收到好友私聊消息', message)
@@ -30,12 +32,22 @@ const plugin2 = definePlugin(() => {
     install() {
       this.logger.INFO('函数式插件, 可以在这里定义一些变量，或者进行一些异步操作，比如从数据库加载数据，或者从远程接口获取数据', vars)
 
-      this.regCommandEvent({
-        endPoint: 'message.private.friend',
-        callback: async (message) => {
-          this.logger.INFO('收到好友私聊消息', message)
+      this.regCommandEvent(
+        {
+          trigger: 'hello',
+          endPoint: 'message.private.friend',
+          commander: () => yargs()
+            .option('name', {
+              alias: 'n',
+              type: 'string',
+              description: '你的名字',
+              demandOption: true,
+            }),
+          callback: ({ context, options }) => {
+            this.bot.sendMsg(context, [Structs.text(`你好，${options.name}！这是一个示例命令。`)])
+          },
         },
-      })
+      )
 
       this.logger.INFO('示例插件安装了')
     },

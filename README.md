@@ -1,4 +1,4 @@
-<img src="https://github.com/HkTeamX/ATRI/blob/main/ATRI.png?raw=true" align="right" style="height:530px;width:450px;" />
+<img src="https://github.com/HkTeamX/ATRI/blob/main/ATRI.png?raw=true" align="right" style="height:530px;width:450px;" alt="logo"/>
 
 # 🤖 ATRI
 

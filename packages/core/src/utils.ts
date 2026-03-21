@@ -1,5 +1,7 @@
 export type NonEmptyArray<T> = [T, ...T[]]
 
+export type MaybePromise<T> = T | Promise<T>
+
 /**
  * 排序对象数组
  * @param arr 对象数组

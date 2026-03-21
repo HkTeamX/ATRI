@@ -1,7 +1,7 @@
 import type { LogLevelType } from '@huan_kong/logger'
-import type { MaybePromise } from 'bun'
 import type { MessageHandler, NCWebsocketOptions, NodeSegment, NoticeHandler, RequestHandler, SendMessageSegment } from 'node-napcat-ts'
-import type { NonEmptyArray } from './utils.js'
+import type { Argv } from 'yargs'
+import type { MaybePromise, NonEmptyArray } from './utils.js'
 import process from 'node:process'
 import { Logger, LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
@@ -11,17 +11,25 @@ export type BotConfig = NCWebsocketOptions & {
   logLevel?: LogLevelType
   prefix: NonEmptyArray<string>
   adminId: NonEmptyArray<number>
+  yargsLocale?: string
 }
 
-export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler> {
+export interface CommandContext<T extends keyof MessageHandler, K extends Argv> {
+  context: MessageHandler[T]
+  options: ReturnType<K['parseSync']>
+}
+
+export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler, K extends Argv = Argv> {
   type: 'command'
   endPoint?: T
-  trigger?: string | RegExp
+  trigger: string | RegExp
   priority?: number
   needReply?: boolean
   needAdmin?: boolean
+  hideInHelp?: boolean
   pluginName: string
-  callback: (context: MessageHandler[T]) => MaybePromise<void | 'quit'>
+  commander?: () => K
+  callback: (context: CommandContext<T, K>) => MaybePromise<void | 'quit'>
 }
 
 export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHandler> {
@@ -70,6 +78,8 @@ export class Bot {
     notice: [],
     request: [],
   }
+
+  unloaders: { [key: string]: (() => void)[] } = {}
 
   constructor(config: BotConfig) {
     this.config = config
@@ -146,18 +156,38 @@ export class Bot {
         }
       }
 
+      const prefix = this.config.prefix.find(item => context.raw_message.startsWith(item))
+      // 没有匹配的prefix
+      if (!prefix) {
+        return
+      }
+
+      const rawCommand = context.raw_message.slice(prefix.length).trim()
+
       for (const event of this.events.command) {
         if (
           !endPoint.includes(event.endPoint ?? 'message')
           || (event.needReply && !isReply)
           || (event.needAdmin && !isAdmin)
-          || (event.trigger && !(typeof event.trigger === 'string' ? context.raw_message.includes(event.trigger) : event.trigger.test(context.raw_message)))
         ) {
           continue
         }
 
+        const commandBody = this.extractCommandBody(rawCommand, event.trigger)
+        if (commandBody === null) {
+          continue
+        }
+
         try {
-          const result = await event.callback(context)
+          const args = this.splitArgs(commandBody)
+          const options = event.commander
+            ? event.commander().fail(false).parseSync(args)
+            : { _: [], $0: '' }
+
+          const result = await event.callback({
+            context,
+            options,
+          })
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
@@ -165,6 +195,14 @@ export class Bot {
           }
         }
         catch (error) {
+          if (error instanceof Error && error.stack?.toString().includes('yargs')) {
+            await this.sendMsg(context, [
+              Structs.text(`命令使用错误: ${error.message}\n\n`),
+              Structs.text(await event.commander?.()?.getHelp() ?? '无帮助信息'),
+            ])
+            continue
+          }
+
           this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error)
           await this.sendMsg(context, [
             Structs.text(`插件 ${event.pluginName} ${endPoint} 事件处理失败, 请联系管理员处理: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
@@ -238,48 +276,100 @@ export class Bot {
     this.logger.INFO(`Bot 初始化完成`)
   }
 
-  regCommandEvent<T extends keyof MessageHandler>(_event: Omit<CommandEvent<T>, 'type'>) {
+  splitArgsRegex = /"([^"]*)"|'([^']*)'|(\S+)/g
+  splitArgs(str: string): string[] {
+    const matches = str.matchAll(this.splitArgsRegex)
+    const result: string[] = []
+
+    for (const match of matches) {
+      result.push(match[1] || match[2] || match[3])
+    }
+
+    return result
+  }
+
+  private extractCommandBody(rawCommand: string, trigger: string | RegExp) {
+    if (typeof trigger === 'string') {
+      if (!rawCommand.startsWith(trigger)) {
+        return null
+      }
+
+      return rawCommand.slice(trigger.length).trim()
+    }
+
+    if (!trigger.test(rawCommand)) {
+      return null
+    }
+
+    return rawCommand.replace(trigger, '').trim()
+  }
+
+  regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type'>) {
     const event = { ..._event, type: 'command' } as CommandEvent
+    if (event.commander) {
+      event.commander = (
+        originCommander =>
+          () => originCommander()
+            .exitProcess(false)
+            .usage(`用法: ${event.trigger} [选项]`)
+            .locale(this.config.yargsLocale ?? 'zh_CN')
+            .help(false)
+            .version(false)
+      )(event.commander)
+    }
+
     this.events.command = sortObjectArray([...this.events.command, event], 'priority', 'down')
-    return () => {
+    const unload = () => {
       const index = this.events.command.indexOf(event)
       if (index !== -1) {
         this.events.command.splice(index, 1)
       }
     }
+    this.unloaders[event.pluginName] = this.unloaders[event.pluginName] ?? []
+    this.unloaders[event.pluginName].push(unload)
+    return unload
   }
 
   regMessageEvent<T extends keyof MessageHandler>(_event: Omit<MessageEvent<T>, 'type'>) {
     const event = { ..._event, type: 'message' } as MessageEvent
     this.events.message = sortObjectArray([...this.events.message, event], 'priority', 'down')
-    return () => {
+    const unload = () => {
       const index = this.events.message.indexOf(event)
       if (index !== -1) {
         this.events.message.splice(index, 1)
       }
     }
+    this.unloaders[event.pluginName] = this.unloaders[event.pluginName] ?? []
+    this.unloaders[event.pluginName].push(unload)
+    return unload
   }
 
   regNoticeEvent<T extends keyof NoticeHandler>(_event: Omit<NoticeEvent<T>, 'type'>) {
     const event = { ..._event, type: 'notice' } as NoticeEvent
     this.events.notice = sortObjectArray([...this.events.notice, event], 'priority', 'down')
-    return () => {
+    const unload = () => {
       const index = this.events.notice.indexOf(event)
       if (index !== -1) {
         this.events.notice.splice(index, 1)
       }
     }
+    this.unloaders[event.pluginName] = this.unloaders[event.pluginName] ?? []
+    this.unloaders[event.pluginName].push(unload)
+    return unload
   }
 
   regRequestEvent<T extends keyof RequestHandler>(_event: Omit<RequestEvent<T>, 'type'>) {
     const event = { ..._event, type: 'request' } as RequestEvent
     this.events.request = sortObjectArray([...this.events.request, event], 'priority', 'down')
-    return () => {
+    const unload = () => {
       const index = this.events.request.indexOf(event)
       if (index !== -1) {
         this.events.request.splice(index, 1)
       }
     }
+    this.unloaders[event.pluginName] = this.unloaders[event.pluginName] ?? []
+    this.unloaders[event.pluginName].push(unload)
+    return unload
   }
 
   /**

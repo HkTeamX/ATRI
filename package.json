@@ -1,8 +1,10 @@
 {
   "type": "module",
   "scripts": {
-    "lint": "bun run --filter \"./{packages,plugins}/*\" --filter \"[lint]\" lint",
-    "typecheck": "bun run --workspaces typecheck"
+    "lint": "bun run --filter './{packages,plugins}/*' --filter '[lint]' lint",
+    "build": "bun run --filter '@atri-bot/core' build",
+    "typecheck": "bun run --workspaces typecheck",
+    "clean": "rm -rf node_modules && bun install"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.7.3",
@@ -13,7 +15,6 @@
     "typescript": "^5.9.3"
   },
   "workspaces": [
-    "packages/*",
-    "plugins/*"
+    "packages/*"
   ]
 }

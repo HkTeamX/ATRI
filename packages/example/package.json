@@ -12,12 +12,12 @@
   },
   "dependencies": {
     "@atri-bot/core": "workspace:*",
-    "@atri-bot/plugin-help": "workspace:*",
-    "@atri-bot/plugin-ping": "workspace:*",
-    "@atri-bot/plugin-plugin-store": "workspace:*",
-    "@atri-bot/plugin-the-cake-is-a-lie": "workspace:*",
     "@huan_kong/logger": "^2.0.1",
     "node-napcat-ts": "^0.4.23",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.35",
     "nodemon": "^3.1.14"
   }
 }
