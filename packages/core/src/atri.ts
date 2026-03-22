@@ -2,7 +2,8 @@ import type { LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
 import type { definePluginReturnType, Plugin } from './plugin.js'
 import path from 'node:path'
-import { Logger } from '@huan_kong/logger'
+import { defaultTransformer, Logger, saveFileTransformer } from '@huan_kong/logger'
+import { Glob } from 'bun'
 import fs from 'fs-extra'
 import { Bot } from './bot.js'
 
@@ -10,6 +11,9 @@ export interface ATRIConfig {
   logLevel?: LogLevelType
   botConfig: BotConfig
   configDir: string
+  logDir: string
+  saveLogs: boolean
+  maxFiles?: number
   plugins?: definePluginReturnType<any>[]
 }
 
@@ -24,13 +28,42 @@ export class ATRI {
     return pluginName.replaceAll('/', '__')
   }
 
+  private async removeUselessLogs() {
+    const glob = new Glob(`${this.config.logDir}/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log`)
+    const files = await Array.fromAsync(glob.scan())
+    const maxFiles = this.config.maxFiles ?? 30
+
+    if (files.length <= maxFiles)
+      return
+
+    const filesToDeleteCount = files.length - maxFiles + 1
+
+    files
+      .sort()
+      .slice(0, filesToDeleteCount)
+      .map(file => fs.promises.rm(path.join(this.config.logDir, file)).catch())
+  }
+
   constructor(config: ATRIConfig) {
     this.config = config
     this.logger = new Logger({
       title: 'ATRI',
-      level: config.logLevel,
+      transformers: [
+        defaultTransformer,
+        ...(this.config.saveLogs
+          ? [
+              saveFileTransformer({
+                filename: () => {
+                  this.removeUselessLogs()
+
+                  return `./logs/${new Date().toISOString().slice(0, 10)}.log`
+                },
+              }),
+            ]
+          : []),
+      ],
     })
-    this.bot = new Bot({
+    this.bot = new Bot(this, {
       logLevel: config.logLevel,
       ...config.botConfig,
     })
@@ -51,25 +84,25 @@ export class ATRI {
     await this.bot.init()
 
     for (const plugin of this.config.plugins ?? []) {
-      await this.loadPlugin(plugin)
+      await this.installPlugin(plugin)
     }
 
     this.logger.INFO(`ATRI 初始化完成`)
   }
 
-  async loadPlugin<T extends object>(plugin: definePluginReturnType<T>) {
+  async installPlugin<T extends object>(plugin: definePluginReturnType<T>) {
     const pluginInstance = await plugin(this)
     if (pluginInstance.pluginName in this.plugins) {
-      this.logger.WARN(`插件 ${pluginInstance.pluginName} 已经加载，跳过本次加载`)
+      this.logger.WARN(`插件 ${pluginInstance.pluginName} 已经安装，跳过本次安装`)
       return
     }
 
     await pluginInstance.install()
     this.plugins[pluginInstance.pluginName] = pluginInstance
-    this.logger.INFO(`插件 ${pluginInstance.pluginName} 加载成功`)
+    this.logger.INFO(`插件 ${pluginInstance.pluginName} 安装成功`)
   }
 
-  async unloadPlugin(pluginName: string) {
+  async uninstallPlugin(pluginName: string) {
     const plugin = this.plugins[pluginName]
     if (!plugin) {
       this.logger.WARN(`插件 ${pluginName} 未找到，无法卸载`)

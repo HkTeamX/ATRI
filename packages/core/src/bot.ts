@@ -1,9 +1,10 @@
-import type { LogLevelType } from '@huan_kong/logger'
+import type { Logger, LogLevelType } from '@huan_kong/logger'
 import type { MessageHandler, NCWebsocketOptions, NodeSegment, NoticeHandler, RequestHandler, SendMessageSegment } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
+import type { ATRI } from './atri.js'
 import type { MaybePromise, NonEmptyArray } from './utils.js'
 import process from 'node:process'
-import { Logger, LogLevel } from '@huan_kong/logger'
+import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
 import { sortObjectArray } from './utils.js'
 
@@ -69,6 +70,7 @@ export interface BotEvents {
 }
 
 export class Bot {
+  atri: ATRI
   config: BotConfig
   logger: Logger
   ws: NCWebsocket
@@ -81,11 +83,12 @@ export class Bot {
 
   unloaders: { [key: string]: (() => void)[] } = {}
 
-  constructor(config: BotConfig) {
+  constructor(atri: ATRI, config: BotConfig) {
+    this.atri = atri
     this.config = config
-    this.logger = new Logger({
+    this.logger = this.atri.logger.clone({
       title: 'Bot',
-      level: config.logLevel,
+      ...(config.logLevel ? { level: config.logLevel } : {}),
     })
     this.ws = new NCWebsocket(config)
   }

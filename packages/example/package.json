@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@atri-bot/core": "workspace:*",
-    "@huan_kong/logger": "^2.0.1",
+    "@huan_kong/logger": "^2.0.2",
     "node-napcat-ts": "^0.4.23",
     "yargs": "^18.0.0"
   },

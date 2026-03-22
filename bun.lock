@@ -16,7 +16,7 @@
       "name": "@atri-bot/core",
       "version": "2.0.0",
       "dependencies": {
-        "@huan_kong/logger": "^2.0.1",
+        "@huan_kong/logger": "^2.0.2",
         "fs-extra": "^11.3.4",
         "node-napcat-ts": "^0.4.23",
         "yargs": "^18.0.0",
@@ -36,13 +36,13 @@
       "name": "@atri-bot/example",
       "dependencies": {
         "@atri-bot/core": "workspace:*",
-        "@huan_kong/logger": "^2.0.1",
-        "node-napcat-ts": "^0.4.23",
-        "yargs": "^18.0.0",
+        "@huan_kong/logger": "latest",
+        "node-napcat-ts": "latest",
+        "yargs": "latest",
       },
       "devDependencies": {
-        "@types/yargs": "^17.0.35",
-        "nodemon": "^3.1.14",
+        "@types/yargs": "latest",
+        "nodemon": "latest",
       },
     },
   },
@@ -191,7 +191,7 @@
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.6.1", "", { "dependencies": { "@eslint/core": "^1.1.1", "levn": "^0.4.1" } }, "sha512-iH1B076HoAshH1mLpHMgwdGeTs0CYwL0SPMkGuSebZrwBp16v415e9NZXg2jtrqPVQjf6IANe2Vtlr5KswtcZQ=="],
 
-    "@huan_kong/logger": ["@huan_kong/logger@2.0.1", "", { "dependencies": { "picocolors": "^1.1.1" } }, "sha512-c5mDPYvZI68XwlM2/EErioVOK2TfeItLfQ9q0qYdTErlCNjQycorDhx7PrX7tHelr7YHSE6tR2oOogNAOza7PQ=="],
+    "@huan_kong/logger": ["@huan_kong/logger@2.0.2", "", { "dependencies": { "picocolors": "^1.1.1" } }, "sha512-5RKRD1x62TEEu0SKx/g+p+iIyggvOKWeHuJQNZoq+6Ufuw1NJIZtqx46VBLUs4jyceerfX8o3O1KxMvh8y3fOQ=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 
