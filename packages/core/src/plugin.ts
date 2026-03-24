@@ -14,10 +14,10 @@ export interface PluginRuntime<TExtraFields extends object, TConfig extends obje
   refreshConfig: () => Promise<void>
   saveConfig: (config?: TConfig) => Promise<void>
 
-  regMessageEvent: <K extends keyof MessageHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => void
-  regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(this: Plugin<TExtraFields, TConfig>, event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => void
-  regNoticeEvent: <K extends keyof NoticeHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => void
-  regRequestEvent: <K extends keyof RequestHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => void
+  regMessageEvent: <K extends keyof MessageHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => () => void
+  regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(this: Plugin<TExtraFields, TConfig>, event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
+  regNoticeEvent: <K extends keyof NoticeHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
+  regRequestEvent: <K extends keyof RequestHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
 }
 
 export interface PluginBaseOptions<TConfig extends object> {

@@ -206,7 +206,7 @@ export class Bot {
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
-            break
+            return
           }
         }
         catch (error) {
@@ -240,7 +240,7 @@ export class Bot {
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
-            break
+            return
           }
         }
         catch (error) {
@@ -275,7 +275,7 @@ export class Bot {
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
-            break
+            return
           }
         }
         catch (error) {
