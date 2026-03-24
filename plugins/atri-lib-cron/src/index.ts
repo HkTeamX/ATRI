@@ -11,17 +11,21 @@ export interface CronConfig {
 
 export type AddCronOptions = Parameters<typeof CronJob.from>[0] & { name: string }
 
+export interface CronPluginProps {
+  cronJobs: Record<string, CronJob>
+  add: (options: AddCronOptions) => [false, string] | [true, CronJob]
+  remove: (name: string) => void
+}
+
 export function CronPlugin(config: CronConfig) {
-  return definePlugin({
+  return definePlugin<CronPluginProps, CronConfig>({
     pluginName: packageJson.name,
     config,
     install() {},
     uninstall() {},
 
-    getCronJobs() {
-      return cronJobs
-    },
-    add(options: AddCronOptions): [false, string] | [true, CronJob] {
+    cronJobs,
+    add(options) {
       if (cronJobs[options.name]) {
         return [false, 'name already exists']
       }
@@ -36,7 +40,7 @@ export function CronPlugin(config: CronConfig) {
       return [true, job]
     },
 
-    remove(name: string): void {
+    remove(name) {
       const job = cronJobs[name]
       if (!job) {
         return

@@ -5,61 +5,68 @@ import type { ATRI } from './atri.js'
 import type { CommandEvent, MessageEvent, NoticeEvent, RequestEvent } from './bot.js'
 import type { MaybePromise } from './utils.js'
 
-export interface PluginRuntime<T extends object = object, Extra extends object = object> {
+export interface PluginRuntime<TExtraFields extends object, TConfig extends object> {
   atri: ATRI
   bot: ATRI['bot']
   ws: ATRI['bot']['ws']
-  config: T
+  config: TConfig
   logger: Logger
   refreshConfig: () => Promise<void>
-  saveConfig: (config?: T) => Promise<void>
+  saveConfig: (config?: TConfig) => Promise<void>
 
-  regMessageEvent: <K extends keyof MessageHandler>(this: Plugin<T, Extra>, event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => void
-  regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(this: Plugin<T, Extra>, event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => void
-  regNoticeEvent: <K extends keyof NoticeHandler>(this: Plugin<T, Extra>, event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => void
-  regRequestEvent: <K extends keyof RequestHandler>(this: Plugin<T, Extra>, event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => void
+  regMessageEvent: <K extends keyof MessageHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => void
+  regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(this: Plugin<TExtraFields, TConfig>, event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => void
+  regNoticeEvent: <K extends keyof NoticeHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => void
+  regRequestEvent: <K extends keyof RequestHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => void
 }
 
-export type Plugin<T extends object = object, Extra extends object = object> = PluginRuntime<T, Extra> & PluginOptions<T, Extra>
-
-export type PluginOptions<T extends object = object, Extra extends object = object> = Extra & {
-  defaultConfig?: T
-  config?: T
+export interface PluginBaseOptions<TConfig extends object> {
+  defaultConfig?: TConfig
+  config?: TConfig
   pluginName: string
   install: () => MaybePromise<void>
   uninstall: () => MaybePromise<void>
-} & ThisType<Plugin<T, Extra>>
+}
 
-export type definePluginReturnType<T extends object, Extra extends object = object> = (atri: ATRI) => Promise<Plugin<T, Extra>>
+export type PluginOptions<TExtraFields extends object, TConfig extends object>
+  = TExtraFields
+    & PluginBaseOptions<TConfig>
+    & ThisType<Plugin<TExtraFields, TConfig>>
 
-export function definePlugin<T extends object, Extra extends object = object>(_pluginOptions: PluginOptions<T, Extra>): definePluginReturnType<T, Extra>
-export function definePlugin<T extends object, Extra extends object = object>(_pluginOptions: () => MaybePromise<PluginOptions<T, Extra>>): definePluginReturnType<T, Extra>
-export function definePlugin<T extends object, Extra extends object = object>(_pluginOptions: PluginOptions<T, Extra> | (() => MaybePromise<PluginOptions<T, Extra>>)): definePluginReturnType<T, Extra> {
+export type Plugin<TExtraFields extends object, TConfig extends object>
+  = PluginRuntime<TExtraFields, TConfig>
+    & PluginOptions<TExtraFields, TConfig>
+
+export type definePluginReturnType<TExtraFields extends object, TConfig extends object> = (atri: ATRI) => Promise<Plugin<TExtraFields, TConfig>>
+
+export function definePlugin<TExtraFields extends object = object, TConfig extends object = object, TRealExtraFields extends object = Omit<TExtraFields, keyof PluginBaseOptions<TConfig>>>(pluginOptions: PluginOptions<TRealExtraFields, TConfig>): definePluginReturnType<TRealExtraFields, TConfig>
+export function definePlugin<TExtraFields extends object = object, TConfig extends object = object, TRealExtraFields extends object = Omit<TExtraFields, keyof PluginBaseOptions<TConfig>>>(pluginOptions: () => MaybePromise<PluginOptions<TRealExtraFields, TConfig>>): definePluginReturnType<TRealExtraFields, TConfig>
+export function definePlugin<TExtraFields extends object = object, TConfig extends object = object, TRealExtraFields extends object = Omit<TExtraFields, keyof PluginBaseOptions<TConfig>>>(pluginOptions: PluginOptions<TRealExtraFields, TConfig> | (() => MaybePromise<PluginOptions<TRealExtraFields, TConfig>>)): definePluginReturnType<TRealExtraFields, TConfig> {
   return async (atri: ATRI) => {
-    const pluginOptions = await Promise.resolve(typeof _pluginOptions === 'function' ? _pluginOptions() : _pluginOptions)
+    const computedPluginOptions = await Promise.resolve(typeof pluginOptions === 'function' ? pluginOptions() : pluginOptions)
 
-    const plugin: Plugin<T, Extra> = {
-      ...pluginOptions,
+    const plugin: Plugin<TRealExtraFields, TConfig> = {
+      ...computedPluginOptions,
 
       atri,
       bot: atri.bot,
       ws: atri.bot.ws,
-      config: pluginOptions.config ?? await atri.loadConfig<T>(pluginOptions.pluginName, pluginOptions.defaultConfig),
-      logger: atri.logger.clone({ title: pluginOptions.pluginName }),
+      config: computedPluginOptions.config ?? await atri.loadConfig<TConfig>(computedPluginOptions.pluginName, computedPluginOptions.defaultConfig),
+      logger: atri.logger.clone({ title: computedPluginOptions.pluginName }),
       refreshConfig: async () => {
-        if (pluginOptions.config)
+        if (computedPluginOptions.config)
           return
-        plugin.config = await atri.loadConfig<T>(pluginOptions.pluginName, pluginOptions.defaultConfig)
+        plugin.config = await atri.loadConfig<TConfig>(computedPluginOptions.pluginName, computedPluginOptions.defaultConfig)
       },
-      saveConfig: async (config?: T) => {
-        if (pluginOptions.config)
+      saveConfig: async (config?: TConfig) => {
+        if (computedPluginOptions.config)
           return
-        await atri.saveConfig<T>(pluginOptions.pluginName, config ?? plugin.config)
+        await atri.saveConfig<TConfig>(computedPluginOptions.pluginName, config ?? plugin.config)
       },
-      regMessageEvent: event => atri.bot.regMessageEvent({ ...event, pluginName: pluginOptions.pluginName }),
-      regCommandEvent: event => atri.bot.regCommandEvent({ ...event, pluginName: pluginOptions.pluginName }),
-      regNoticeEvent: event => atri.bot.regNoticeEvent({ ...event, pluginName: pluginOptions.pluginName }),
-      regRequestEvent: event => atri.bot.regRequestEvent({ ...event, pluginName: pluginOptions.pluginName }),
+      regMessageEvent: event => atri.bot.regMessageEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
+      regCommandEvent: event => atri.bot.regCommandEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
+      regNoticeEvent: event => atri.bot.regNoticeEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
+      regRequestEvent: event => atri.bot.regRequestEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
     }
 
     return plugin

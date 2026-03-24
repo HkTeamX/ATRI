@@ -12,7 +12,7 @@ export type ProxyConfig
       }
     }
 
-export const ProxyPlugin = definePlugin<ProxyConfig>({
+export const ProxyPlugin = definePlugin<object, ProxyConfig>({
   pluginName: PackageJson.name,
   defaultConfig: {
     enable: false,

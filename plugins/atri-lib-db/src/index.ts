@@ -7,11 +7,11 @@ import { drizzle } from 'drizzle-orm/bun-sql'
 import { migrate } from 'drizzle-orm/bun-sql/migrator'
 import PackageJson from '../package.json'
 
-let _connectString: string | null = null
+let initDbPluginOptions: InitDbPluginOptions | null = null
 
 export interface InitDbPluginOptions {
   connectString: string
-  config: DrizzleConfig
+  config?: DrizzleConfig
 }
 
 export function InitDbPlugin(options: InitDbPluginOptions) {
@@ -19,9 +19,9 @@ export function InitDbPlugin(options: InitDbPluginOptions) {
     pluginName: `${PackageJson.name}-init-db`,
     async install() {
       try {
-        const db = drizzle(options.connectString, options.config)
+        const db = drizzle(options.connectString, options.config ?? {})
         await db.execute(sql`SELECT 1;`)
-        _connectString = options.connectString
+        initDbPluginOptions = options
         this.logger.INFO('测试数据库连接成功')
       }
       catch (error) {
@@ -42,14 +42,14 @@ export function DbPlugin<
   TSchema extends Record<string, unknown>,
   TRelations extends AnyRelations = EmptyRelations,
 >(options: DbPluginOptions<TSchema, TRelations>) {
-  if (!_connectString) {
+  if (!initDbPluginOptions) {
     throw new Error('请先通过 InitDbPlugin 插件初始化数据库连接')
   }
 
   return definePlugin({
     pluginName: `${PackageJson.name}-db`,
-    drizzle: drizzle(_connectString ?? '', options.config),
-    async  install() {
+    drizzle: drizzle(initDbPluginOptions.connectString, { ...initDbPluginOptions.config, ...options.config } as DrizzleConfig<TSchema, TRelations>),
+    async install() {
       // 自动执行迁移
       if (!options.migration) {
         return

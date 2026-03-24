@@ -9,6 +9,7 @@
     "build": "vitepress build src"
   },
   "dependencies": {
+    "markdown-it-mathjax3": "^5.2.0",
     "vitepress": "^1.6.4"
   }
 }

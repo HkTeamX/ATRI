@@ -1,4 +1,4 @@
-import type { Input, KyInstance, Options } from 'ky'
+import type { Input, KyInstance, Options, ResponsePromise } from 'ky'
 import fs from 'node:fs'
 import path from 'node:path'
 import stream from 'node:stream'
@@ -15,13 +15,23 @@ export interface DownloadFileOptions extends Options {
   savePath: string
 }
 
+export interface RequestPluginProps {
+  defaultKyConfig: Options
+  ky: KyInstance
+  request: <T>(input: Input, options?: Options) => ResponsePromise<T>
+  json: <T>(input: Input, options?: Options) => Promise<T>
+
+  extractFilenameFromHeader: (disposition: string) => string | null
+  downloadFile: (input: Input, options: DownloadFileOptions) => Promise<string>
+}
+
 const extractFilenameRegexp = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i
 
 export function RequestPlugin(options: RequestPluginConfig = {}) {
-  return definePlugin({
+  return definePlugin<RequestPluginProps>({
     pluginName: PackageJson.name,
-    defaultKyConfig: {} as Options,
-    ky: {} as KyInstance,
+    defaultKyConfig: {},
+    ky: ky.create(),
     install() {
       this.defaultKyConfig = {
         hooks: {
@@ -56,13 +66,13 @@ export function RequestPlugin(options: RequestPluginConfig = {}) {
     },
     uninstall() {},
 
-    request(input: Input, options?: Options) {
+    request(input, options?) {
       return this.ky(input, options)
     },
-    json<T>(input: Input, options?: Options) {
-      return this.request(input, options).json<T>()
+    json(input, options?) {
+      return this.request(input, options).json()
     },
-    extractFilenameFromHeader(disposition: string): string | null {
+    extractFilenameFromHeader(disposition) {
       const match = disposition.match(extractFilenameRegexp)
 
       if (!match) {
