@@ -72,7 +72,7 @@ export class ATRI {
   }
 
   async init() {
-    if (this.config.disableATRIFlag) {
+    if (!this.config.disableATRIFlag) {
       console.log('\x1Bc')
       console.log(
         `%c              __               .__
