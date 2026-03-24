@@ -1,0 +1,23 @@
+{
+  "name": "@atri-bot/lib-db",
+  "type": "module",
+  "version": "2.0.3",
+  "description": "db lib for atri framework",
+  "author": "huan_kong",
+  "license": "MIT",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "./dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
+  },
+  "dependencies": {
+    "@atri-bot/core": "^2.0.2",
+    "@huan_kong/logger": "^2.0.2",
+    "drizzle-orm": "^1.0.0-beta.19"
+  }
+}

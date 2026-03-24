@@ -6,12 +6,12 @@
 
 ## 2.安装 ATRI
 
-全部推荐使用 `pnpm`, 不过大部分市面上的包管理工具理论上都支持
+全部推荐使用 `bun`, 不过大部分市面上的包管理工具理论上都支持
 
 ::: code-group
 
-```sh [pnpm]
-pnpm add @atri-bot/core
+```sh [bun]
+bun add @atri-bot/core
 ```
 
 :::
@@ -22,12 +22,12 @@ pnpm add @atri-bot/core
 
 ## 4.安装 ATRI 基础插件
 
-此为插件管理插件, 可用于自启时自动加载指定插件, 安装, 禁用 插件等操作
+此为帮助插件和ping测试插件
 
 ::: code-group
 
-```sh [pnpm]
-pnpm add @atri-bot/plugin-plugin-store
+```sh [bun]
+bun add @atri-bot/plugin-help @atri-bot/plugin-ping @huan_kong/logger node-napcat-ts
 ```
 
 :::
@@ -35,51 +35,43 @@ pnpm add @atri-bot/plugin-plugin-store
 ## 5.连接 NapCatQQ
 
 ```ts
-import { ATRI, type BotConfig } from '@atri-bot/core'
 import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
-import path from 'node:path'
+import process from 'node:process'
+import { ATRI } from '@atri-bot/core'
+import { HelpPlugin } from '@atri-bot/plugin-help'
+import { PingPlugin } from '@atri-bot/plugin-ping'
+import { LogLevel } from '@huan_kong/logger'
 
-const bot: BotConfig = {
-  // 命令前缀
-  prefix: ['/'],
-  // 管理员ID
-  adminId: [10001],
-  // NapCatQQ 后端配置
-  connection: {
-    protocol: 'ws',
-    host: '127.0.0.1',
-    port: 3001,
-    accessToken: '',
-  },
-  // 自动重连配置
-  reconnection: {
-    enable: true,
-    attempts: 10,
-    delay: 5000,
-  },
-}
+const debug = process.argv.includes('--debug')
 
-// 进行初始化
-await ATRI.init({
-  bot,
-  // 是否开启调试模式
-  debug: true,
-  // 必填参数, 用于配置 node_modules 的加载路径, 一般直接按照下方的直接使用即可
-  baseDir: import.meta.dirname,
-  // 初始化时自动加载的插件
-  // 我们加载上前面说的插件管理插件
-  plugins: ['@atri-bot/plugin-plugin-store'],
+const atri = new ATRI({
+  logLevel: debug ? LogLevel.DEBUG : LogLevel.INFO,
+  plugins: [
+    PingPlugin,
+    HelpPlugin,
+  ],
+  configDir: './config',
+  logDir: './logs',
+  saveLogs: !debug,
+  botConfig: {
+    prefix: JSON.parse(process.env.PREFIX ?? '["/"]'),
+    adminId: JSON.parse(process.env.ADMIN_ID ?? '[10001]'),
+    protocol: (process.env.NC_PROTOCOL ?? 'ws') as NCWebsocketOptionsHost['protocol'],
+    host: process.env.NC_HOST ?? '127.0.0.1',
+    port: Number.parseInt(process.env.NC_PORT ?? '3001'),
+    accessToken: process.env.NC_ACCESS_TOKEN,
+    reconnection: {
+      enable: process.env.NC_RECONNECTION_ENABLE === 'true',
+      attempts: Number.parseInt(process.env.NC_RECONNECTION_ATTEMPTS ?? '10'),
+      delay: Number.parseInt(process.env.NC_RECONNECTION_DELAY ?? '5000'),
+    },
+  },
 })
+
+// 启动初始化流程
+atri.init()
 ```
 
-## 6.安装剩余基础插件
+## 6.测试是否启动成功
 
-向机器人发送 `/插件管理 安装 @atri-bot/plugin-help` 来安装帮助指令的插件
-
-后续参数需求等, 请使用 `/help` 命令等查询
-
-如使用 `/help` 命令出现无反应, 请检查控制台输出
-
-大概率时因为 `pupoteer` 没有找到可用的 `chrome`, 根据控制台提示执行命令 `pnpx puppeteer browsers install chrome` 手动安装即可
-
-推荐国内用户安装 `@atri-bot/plugin-proxy` 使用全局代理功能, 否则可能部分请求无法成功
+请使用 `/help` 命令来查询可用命令列表

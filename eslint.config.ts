@@ -1,41 +1,24 @@
-import pluginJs from '@eslint/js'
-import globals from 'globals'
-import tseslint from 'typescript-eslint'
+import antfu from '@antfu/eslint-config'
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
-  { files: ['**/*.{js,mjs,cjs,ts}'] },
+export default antfu(
   {
-    languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.es2026,
-      },
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
+    type: 'lib',
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/drizzle/**',
+      '**/.eslintcache',
+    ],
   },
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
   {
     rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          args: 'all',
-          argsIgnorePattern: '^_',
-          caughtErrors: 'all',
-          caughtErrorsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          ignoreRestSiblings: true,
-        },
-      ],
+      'ts/explicit-function-return-type': 'off',
     },
   },
   {
-    ignores: ['node_modules', '**/lib', '**/out', '**/dist', 'eslint.config.ts'],
+    files: ['./packages/core/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
   },
-]
+)

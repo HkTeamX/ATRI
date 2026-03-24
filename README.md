@@ -1,4 +1,4 @@
-<img src="https://github.com/HkTeamX/ATRI/blob/main/ATRI.png?raw=true" align="right" style="height:530px;width:450px;" />
+<img src="https://github.com/HkTeamX/ATRI/blob/main/ATRI.png?raw=true" align="right" style="height:530px;width:450px;" alt="logo"/>
 
 # 🤖 ATRI
 
@@ -6,6 +6,6 @@
 
 取名来自 [亚托莉(ATRI)](https://mzh.moegirl.org.cn/%E4%BA%9A%E6%89%98%E8%8E%89)
 
-## 🎉 [更新日志](./CHANGELOG.md)
+## 🎉 [更新日志](./packages/core/CHANGELOG.md)
 
 ## 📑 [开发文档](https://atri.huankong.top)

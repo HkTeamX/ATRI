@@ -1,14 +1,6 @@
-/**
- * 性能计时器
- * 返回一个获取当前时间耗时的函数
- */
-export function performanceCounter() {
-  const startTime = performance.now()
-  return () => {
-    const endTime = performance.now()
-    return (endTime - startTime).toFixed(2)
-  }
-}
+export type NonEmptyArray<T> = [T, ...T[]]
+
+export type MaybePromise<T> = T | Promise<T>
 
 /**
  * 排序对象数组
@@ -22,8 +14,17 @@ export function sortObjectArray<T extends object>(
   sortType: 'up' | 'down' = 'up',
 ): T[] {
   return arr.sort((a, b) => {
-    if (a[property] > b[property]) return sortType === 'up' ? 1 : -1
-    if (a[property] < b[property]) return sortType === 'up' ? -1 : 1
+    if (a[property] > b[property])
+      return sortType === 'up' ? 1 : -1
+    if (a[property] < b[property])
+      return sortType === 'up' ? -1 : 1
     return 0
+  })
+}
+
+export const decodeUnicodeRegexp = /\\u([0-9a-fA-F]{4})/g
+export function decodeUnicode(raw: string): string {
+  return raw.replace(decodeUnicodeRegexp, (match, p1) => {
+    return String.fromCharCode(Number.parseInt(p1, 16))
   })
 }

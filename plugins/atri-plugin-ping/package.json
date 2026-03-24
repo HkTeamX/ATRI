@@ -1,0 +1,26 @@
+{
+  "name": "@atri-bot/plugin-ping",
+  "type": "module",
+  "version": "2.0.1",
+  "description": "ping plugin for atri framework",
+  "author": "huan_kong",
+  "license": "MIT",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "./dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
+  },
+  "dependencies": {
+    "@atri-bot/core": "^2.0.2",
+    "node-napcat-ts": "^0.4.23",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.35"
+  }
+}

@@ -1,29 +1,19 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "out",
-    "declaration": false,
     "paths": {
       "@/*": ["./src/*"],
       "@atri-bot/core": ["../core/src/index.ts"],
-      "@atri-bot/plugin-help": [
-        "../../ATRI-Official-Plugins/packages/atri-plugin-help/src/index.ts"
-      ],
-      "@atri-bot/plugin-ping": [
-        "../../ATRI-Official-Plugins/packages/atri-plugin-ping/src/index.ts"
-      ],
-      "@atri-bot/plugin-plugin-store": [
-        "../../ATRI-Official-Plugins/packages/atri-plugin-plugin-store/src/index.ts"
-      ],
-      "@atri-bot/plugin-the-cake-is-a-lie": [
-        "../../ATRI-Official-Plugins/packages/atri-plugin-the-cake-is-a-lie/src/index.ts"
-      ],
-      "@atri-bot/plugin-puppeteer": [
-        "../../ATRI-Official-Plugins/packages/atri-plugin-puppeteer/src/index.ts"
-      ]
+      "@atri-bot/plugin-ping": ["../../plugins/atri-plugin-ping/src/index.ts"],
+      "@atri-bot/plugin-proxy": ["../../plugins/atri-plugin-proxy/src/index.ts"],
+      "@atri-bot/plugin-the-cake-is-a-lie": ["../../plugins/atri-plugin-the-cake-is-a-lie/src/index.ts"],
+      "@atri-bot/plugin-help": ["../../plugins/atri-plugin-help/src/index.ts"],
+      "@atri-bot/lib-db": ["../../plugins/atri-lib-db/src/index.ts"]
     },
+    "allowImportingTsExtensions": true,
+    "declaration": false,
     "noEmit": true,
-    "allowImportingTsExtensions": true
+    "outDir": "out"
   },
   "include": ["src"]
 }
