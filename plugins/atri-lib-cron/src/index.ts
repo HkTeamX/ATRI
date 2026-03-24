@@ -17,7 +17,7 @@ export interface CronPluginProps {
   remove: (name: string) => void
 }
 
-export function CronPlugin(config: CronConfig) {
+export function CronPlugin(config: CronConfig = {}) {
   return definePlugin<CronPluginProps, CronConfig>({
     pluginName: packageJson.name,
     config,

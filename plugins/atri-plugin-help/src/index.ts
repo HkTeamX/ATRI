@@ -29,7 +29,7 @@ const helpCommander = yargs()
     description: '显示指定命令的帮助文档',
   })
 
-const helpRegexp = /ppp|帮助/
+const helpRegexp = /help|帮助/
 
 export const HelpPlugin = definePlugin<HelpPluginProps>({
   pluginName: PackageJson.name,

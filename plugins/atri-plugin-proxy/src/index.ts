@@ -21,6 +21,12 @@ export const ProxyPlugin = definePlugin<object, ProxyConfig>({
     if (!this.config.enable) {
       return
     }
+
+    if (!this.config.proxy?.http || !this.config.proxy?.https) {
+      this.logger.ERROR('代理配置不完整，请检查配置项 proxy.http 和 proxy.https 是否正确')
+      return
+    }
+
     proxy.setConfig(this.config.proxy)
     proxy.start()
   },

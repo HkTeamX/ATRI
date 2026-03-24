@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/lib-db",
   "type": "module",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "db lib for atri framework",
   "author": "huan_kong",
   "license": "MIT",

@@ -4,7 +4,7 @@ import path from 'node:path'
 import stream from 'node:stream'
 import { definePlugin } from '@atri-bot/core'
 import ky from 'ky'
-import PackageJson from '../package.json'
+import PackageJson from '../package.json' with { type: 'json' }
 
 export interface RequestPluginConfig {
   kyOptions?: Options

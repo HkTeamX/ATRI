@@ -1,11 +1,10 @@
 import type { AnyRelations, DrizzleConfig, EmptyRelations } from 'drizzle-orm'
 import type { MigrationConfig } from 'drizzle-orm/migrator'
-import process from 'node:process'
 import { definePlugin } from '@atri-bot/core'
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/bun-sql'
 import { migrate } from 'drizzle-orm/bun-sql/migrator'
-import PackageJson from '../package.json'
+import PackageJson from '../package.json' with { type: 'json' }
 
 let initDbPluginOptions: InitDbPluginOptions | null = null
 
@@ -26,7 +25,7 @@ export function InitDbPlugin(options: InitDbPluginOptions) {
       }
       catch (error) {
         this.logger.ERROR('测试数据库连接失败', error)
-        process.exit(1)
+        throw error
       }
     },
     uninstall() {},
