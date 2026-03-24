@@ -9,12 +9,13 @@
   "devDependencies": {
     "@antfu/eslint-config": "^7.7.3",
     "@types/bun": "^1.3.11",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "jiti": "^2.6.1",
     "tsdown": "^0.21.4",
     "typescript": "^5.9.3"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "plugins/*"
   ]
 }

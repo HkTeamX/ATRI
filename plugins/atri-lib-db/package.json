@@ -1,24 +1,23 @@
 {
   "name": "@atri-bot/lib-db",
   "type": "module",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "db lib for atri framework",
   "author": "huan_kong",
   "license": "MIT",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "files": [
     "./dist/**/*"
   ],
   "scripts": {
-    "build": "pnpm run type-check && pnpm run lint && tsup",
-    "clean": "rimraf dist",
+    "build": "tsdown",
     "lint": "eslint",
-    "lint:fix": "eslint --fix",
-    "type-check": "tsc --noEmit -p tsconfig.json --composite false"
+    "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@huan_kong/logger": "^1.0.6",
+    "@atri-bot/core": "^2.0.0",
+    "@huan_kong/logger": "^2.0.2",
     "drizzle-orm": "^1.0.0-beta.18-7eb39f0"
   }
 }

@@ -1,106 +1,75 @@
-import type { CommandCallback } from '@atri-bot/core'
-import path from 'node:path'
-import { BasePlugin } from '@atri-bot/core'
-import { Puppeteer } from '@atri-bot/lib-puppeteer'
-import { Command } from 'commander'
+import type { CommandContext } from '@atri-bot/core'
+import { decodeUnicode, definePlugin } from '@atri-bot/core'
 import { Structs } from 'node-napcat-ts'
+import yargs from 'yargs'
+import PackageJson from '../package.json' with { type: 'json' }
 
-export interface HelpCommandContext {
-  args: [string?]
-  params: {
-    page?: number
-    size?: number
-  }
-}
-
-export class Plugin extends BasePlugin {
-  disableAutoLoadConfig = true
-  puppeteer = new Puppeteer({
-    ...this.atri.config,
-    viewport: {
-      width: 650,
-      height: 800,
-    },
+const helpCommander = yargs()
+  .option('page', {
+    alias: 'p',
+    type: 'number',
+    description: '页码',
+    default: 1,
   })
+  .option('size', {
+    alias: 's',
+    type: 'number',
+    description: '每页条数',
+    default: 8,
+  })
+  .option('command', {
+    alias: 'c',
+    type: 'string',
+    description: '显示指定命令的帮助文档',
+  })
+const helpRegexp = /ppp|帮助/
 
-  load() {
-    this.regCommandEvent({
-      commandName: /help|帮助/,
-      commander: new Command()
-        .description('显示帮助信息')
-        .argument('[action]', '显示指定命令的帮助文档')
-        .option('-p, --page <number>', '页码', '1')
-        .option('-s, --size <number>', '每页条数', '8'),
-      callback: this.handleHelpCommand.bind(this),
-    })
-  }
-
-  unload() {}
-
-  private async handleHelpCommand({ context, args, params }: CommandCallback<HelpCommandContext>) {
-    const [targetCommand] = args
-
-    if (!targetCommand) {
-      const commandList = await this.getCommandList()
-      const { page = 1, size = 8 } = params
-
-      if (size > 8) {
-        await this.bot.sendMsg(context, [Structs.text('每页条数最大为8哦~')])
-        return
-      }
-
-      // 请根据page去分割commandList
-      const pagedCommandList = commandList.slice((page - 1) * size, page * size)
-
-      if (pagedCommandList.length === 0) {
-        await this.bot.sendMsg(context, [Structs.text('未找到该页的命令列表')])
-        return
-      }
-
-      const image = await this.puppeteer.render({
-        templatePath: path.join(__dirname, 'static', 'command_list.html'),
-        data: {
-          command_help_info: `发送 "${this.bot.config.prefix[0]}help [命令名]" 查询详细用法, 使用 -p 和 -s 参数可分页查看命令列表`,
-          commands: pagedCommandList,
-          page,
-          size,
-          total: commandList.length,
-        },
+export const HelpPlugin = definePlugin(() => {
+  return {
+    pluginName: PackageJson.name,
+    install() {
+      this.regCommandEvent({
+        trigger: helpRegexp,
+        commander: helpCommander,
+        callback: this.handleHelpCommand.bind(this),
       })
+    },
+    uninstall() {},
 
-      await this.bot.sendMsg(context, [Structs.image(image)], { reply: false, at: false })
-      return
-    }
+    async handleHelpCommand({ context, options }: CommandContext<'message', typeof helpCommander>) {
+      const { page, size, command } = options
 
-    const helpInfo = this.bot.getCommandHelpInformation(targetCommand)
-    if (!helpInfo) {
-      await this.bot.sendMsg(context, [Structs.text('未找到该命令的帮助信息')])
-      return
-    }
+      if (command) {
+        const matchedCommand = this.bot.events.command.find((cmd) => {
+          if (typeof cmd.trigger === 'string') {
+            return cmd.trigger.startsWith(command)
+          }
+          else {
+            return cmd.trigger.test(command)
+          }
+        })
 
-    const image = await this.puppeteer.render({
-      templatePath: path.join(__dirname, 'static', 'command_args.html'),
-      data: {
-        command_args: helpInfo,
-      },
-    })
+        if (!matchedCommand || !matchedCommand.commander) {
+          await this.bot.sendMsg(context, [Structs.text('未找到该命令的帮助信息')])
+          return
+        }
 
-    await this.bot.sendMsg(context, [Structs.image(image)])
+        const description = await matchedCommand.commander().getHelp()
+        await this.bot.sendMsg(context, [Structs.text(description)])
+        return
+      }
+
+      const commandList = this.bot.events.command
+        .filter(cmd => !cmd.hideInHelp)
+        .slice((page - 1) * size, page * size)
+        .map((cmdEvent, index) => `${index + 1}. ${decodeUnicode(cmdEvent.trigger.toString())}`)
+
+      await this.bot.sendMsg(context, [
+        Structs.text(`ATRI Bot v${this.atri.version} - 命令列表 (第 ${page} 页)\n`),
+        Structs.text(`使用 "${this.bot.config.prefix[0]}help -p <页码> -s <每页条数>" 来翻页\n`),
+        Structs.text(`使用 "${this.bot.config.prefix[0]}help -c <命令>" 查看指定命令的帮助信息\n`),
+        Structs.text(commandList.join('\n')),
+      ])
+    },
   }
-
-  decodeUnicode(str: string) {
-    return str.replace(/\\u([\dA-F]{4})/gi, (_, g1) => String.fromCharCode(Number.parseInt(g1, 16)))
-  }
-
-  private async getCommandList() {
-    return this.bot.events.command
-      .filter(cmdEvent => cmdEvent.needHide !== true)
-      .map((cmdEvent, index) => ({
-        name: this.decodeUnicode(cmdEvent.commandName.toString()),
-        description: this.decodeUnicode(
-          this.bot.getCommandInfo(cmdEvent.commander ?? new Command(), '无描述', 'description'),
-        ),
-        index: index + 1,
-      }))
-  }
-}
+})

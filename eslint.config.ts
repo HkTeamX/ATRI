@@ -8,18 +8,17 @@ export default antfu(
       '**/dist/**',
       '**/drizzle/**',
       '**/.eslintcache',
-      '**/backend/public/**',
     ],
+  },
+  {
+    rules: {
+      'ts/explicit-function-return-type': 'off',
+    },
   },
   {
     files: ['./packages/core/**/*.ts'],
     rules: {
       'no-console': 'off',
-    },
-  },
-  {
-    rules: {
-      'ts/explicit-function-return-type': 'off',
     },
   },
 )

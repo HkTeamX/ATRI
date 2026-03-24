@@ -21,3 +21,10 @@ export function sortObjectArray<T extends object>(
     return 0
   })
 }
+
+export const decodeUnicodeRegexp = /\\u([0-9a-fA-F]{4})/g
+export function decodeUnicode(raw: string): string {
+  return raw.replace(decodeUnicodeRegexp, (match, p1) => {
+    return String.fromCharCode(Number.parseInt(p1, 16))
+  })
+}

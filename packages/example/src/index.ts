@@ -1,64 +1,26 @@
 import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import process from 'node:process'
-import { ATRI, definePlugin } from '@atri-bot/core'
+import { ATRI } from '@atri-bot/core'
+import { InitDbPlugin } from '@atri-bot/lib-db'
+import { HelpPlugin } from '@atri-bot/plugin-help'
+import { PingPlugin } from '@atri-bot/plugin-ping'
+import { ProxyPlugin } from '@atri-bot/plugin-proxy'
+import { TheCakeIsALiePlugin } from '@atri-bot/plugin-the-cake-is-a-lie'
 import { LogLevel } from '@huan_kong/logger'
-import { Structs } from 'node-napcat-ts'
-import yargs from 'yargs'
 
 const debug = process.argv.includes('--debug')
 
-const plugin = definePlugin({
-  pluginName: '示例插件',
-  install() {
-    this.regMessageEvent({
-      endPoint: 'message.private.friend',
-      callback: async (message) => {
-        this.logger.INFO('收到好友私聊消息', message)
-      },
-    })
-
-    this.logger.INFO('示例插件安装了')
-  },
-  uninstall() {
-    this.logger.INFO('示例插件卸载了')
-  },
-})
-
-const plugin2 = definePlugin(() => {
-  const vars = 1122
-
-  return {
-    pluginName: '示例插件-函数式',
-    async install() {
-      this.logger.INFO('函数式插件, 可以在这里定义一些变量，或者进行一些异步操作，比如从数据库加载数据，或者从远程接口获取数据', vars)
-      await this.atri.uninstallPlugin('示例插件')
-
-      this.regCommandEvent({
-        trigger: 'hello',
-        endPoint: 'message.private.friend',
-        commander: () => yargs()
-          .option('name', {
-            alias: 'n',
-            type: 'string',
-            description: '你的名字',
-            demandOption: true,
-          }),
-        callback: ({ context, options }) => {
-          this.bot.sendMsg(context, [Structs.text(`你好，${options.name}！这是一个示例命令。`)])
-        },
-      })
-
-      this.logger.INFO('示例插件安装了')
-    },
-    uninstall() {
-      this.logger.INFO('示例插件卸载了')
-    },
-  }
-})
-
 const atri = new ATRI({
   logLevel: debug ? LogLevel.DEBUG : LogLevel.INFO,
-  plugins: [plugin, plugin2],
+  plugins: [
+    PingPlugin,
+    ProxyPlugin,
+    TheCakeIsALiePlugin,
+    HelpPlugin,
+    InitDbPlugin({
+      connectString: process.env.DATABASE_URL ?? '',
+    }),
+  ],
   configDir: './config',
   logDir: './logs',
   saveLogs: !debug,
@@ -77,6 +39,4 @@ const atri = new ATRI({
   },
 })
 
-;(async () => {
-  await atri.init()
-})()
+atri.init()

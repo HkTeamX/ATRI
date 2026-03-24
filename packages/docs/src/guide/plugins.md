@@ -6,10 +6,14 @@
 
 [Minato-Official-Plugins](https://github.com/HkTeamX/Minato-Official-Plugins)
 
+命令注册里的 `commander` 现在必须传入工厂函数，请使用 `defineCommandCommander(() => ...)` 包一层，再在工厂里创建和配置命令实例。
+
 ```ts
-import { BasePlugin, type CommandCallback } from '@atri-bot/core'
+import type { CommandCallback } from '@atri-bot/core'
+import type { SendMessageSegment } from 'node-napcat-ts'
+import { BasePlugin, defineCommandCommander } from '@atri-bot/core'
 import { Command } from 'commander'
-import { convertCQCodeToJSON, type SendMessageSegment } from 'node-napcat-ts'
+import { convertCQCodeToJSON } from 'node-napcat-ts'
 
 export interface PingConfig {
   defaultReply: string
@@ -36,10 +40,10 @@ export class Plugin extends BasePlugin<PingConfig> {
     this.reg_command_event<PingCommandContext>({
       end_point: 'message.private',
       command_name: 'ping',
-      commander: new Command()
+      commander: defineCommandCommander(() => new Command()
         .description('检查Bot是否在线, 并返回指定内容')
         .option('-r, --reply <content>', '要回复的内容')
-        .argument('[content]', '要回复的内容'),
+        .argument('[content]', '要回复的内容')),
       callback: async ({ context, params, args }) => {
         await this.bot.send_msg(
           context,
@@ -55,10 +59,10 @@ export class Plugin extends BasePlugin<PingConfig> {
     this.reg_command_event({
       end_point: 'message.private',
       command_name: 'ping2',
-      commander: new Command()
+      commander: defineCommandCommander(() => new Command()
         .description('检查Bot是否在线, 并返回指定内容')
         .option('-r, --reply <content>', '要回复的内容')
-        .argument('[content]', '要回复的内容'),
+        .argument('[content]', '要回复的内容')),
       callback: this.handlePingCommand.bind(this),
       // 根据自己喜好来
       // callback: (options) => this.handlePingCommand(options),

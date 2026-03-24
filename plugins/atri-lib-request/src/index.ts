@@ -1,152 +1,102 @@
-import type { AxiosInstance, AxiosRequestConfig, CreateAxiosDefaults } from 'axios'
-import type { IAxiosRetryConfig } from 'axios-retry'
-import type { Readable } from 'node:stream'
+import type { Input, KyInstance, Options } from 'ky'
 import fs from 'node:fs'
 import path from 'node:path'
-import { Logger, LogLevel } from '@huan_kong/logger'
-import _axios from 'axios'
-import axiosRetry from 'axios-retry'
+import stream from 'node:stream'
+import { definePlugin } from '@atri-bot/core'
+import ky from 'ky'
+import PackageJson from '../package.json'
 
-export interface AxiosConfig {
-  debug?: boolean
-  logLevel?: LogLevel
-  axiosRetry?: IAxiosRetryConfig
-  createAxios?: CreateAxiosDefaults
+export interface RequestPluginConfig {
+  kyOptions?: Options
 }
 
-export class Axios {
-  axiosInstance: AxiosInstance
-  config: AxiosConfig
-  logger: Logger
+export interface DownloadFileOptions extends Options {
+  filename?: string
+  savePath: string
+}
 
-  constructor(config: AxiosConfig) {
-    this.config = config
-    this.logger = new Logger({
-      title: 'Axios',
-      level: config.logLevel ?? (config.debug ? LogLevel.DEBUG : undefined),
-    })
-    this.axiosInstance = _axios.create({
-      ...this.config.createAxios,
-    })
+const extractFilenameRegexp = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i
 
-    axiosRetry(this.axiosInstance, {
-      retries: this.config.axiosRetry?.retries ?? 3,
-      retryDelay: (...args) => {
-        this.logger.DEBUG(
-          `收到网络请求失败响应[${args[0]}/${this.config.axiosRetry?.retries ?? 3}]`,
-          {
-            url: args[1].config?.url,
-            method: args[1].config?.method,
-            status: args[1].response?.status,
-            message: args[1].message,
-            response: args[1].response?.data,
-          },
-        )
-        return (this.config.axiosRetry?.retryDelay ?? axiosRetry.linearDelay())(...args)
-      },
-      ...this.config.axiosRetry,
-    })
-
-    if (config.debug) {
-      // 添加请求拦截器
-      this.axiosInstance.interceptors.request.use(
-        (config) => {
-          this.logger.DEBUG('发送网络请求', {
-            method: config.method,
-            url: config.url,
-            headers: config.headers,
-            params: config.params,
-            data: config.data,
-          })
-
-          return config
+export function RequestPlugin(options: RequestPluginConfig = {}) {
+  return definePlugin({
+    pluginName: PackageJson.name,
+    defaultKyConfig: {} as Options,
+    ky: {} as KyInstance,
+    install() {
+      this.defaultKyConfig = {
+        hooks: {
+          beforeRequest: [
+            (request, options) => {
+              this.logger.DEBUG('发送网络请求', { request, options })
+            },
+          ],
+          beforeRetry: [
+            ({ request, error, retryCount }) => {
+              this.logger.DEBUG(`收到网络请求失败响应[${retryCount}]`, { request, error })
+            },
+          ],
+          afterResponse: [
+            (request, options, response) => {
+              this.logger.DEBUG('收到网络请求成功响应', { request, options, response })
+            },
+          ],
+          beforeError: [
+            async (context) => {
+              this.logger.DEBUG('收到网络请求错误响应', context)
+              return context
+            },
+          ],
         },
-        (error) => {
-          this.logger.ERROR('发送网络请求时遇到问题', error)
-          return Promise.reject(error)
-        },
-      )
+      }
 
-      // 添加响应拦截器
-      this.axiosInstance.interceptors.response.use((response) => {
-        this.logger.DEBUG('收到网络请求成功响应', {
-          status: response.status,
-          statusText: response.statusText,
-          url: response.config.url,
-          response: response.data,
-        })
-        return response
+      this.ky = ky.create({
+        ...this.defaultKyConfig,
+        ...options.kyOptions,
       })
-    }
-  }
+    },
+    uninstall() {},
 
-  request<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.axiosInstance.request<T>(config)
-  }
+    request(input: Input, options?: Options) {
+      return this.ky(input, options)
+    },
+    json<T>(input: Input, options?: Options) {
+      return this.request(input, options).json<T>()
+    },
+    extractFilenameFromHeader(disposition: string): string | null {
+      const match = disposition.match(extractFilenameRegexp)
 
-  get<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.request<T, P>({ ...config, method: 'GET' })
-  }
+      if (!match) {
+        return null
+      }
 
-  delete<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.request<T, P>({ ...config, method: 'DELETE' })
-  }
+      return decodeURIComponent(match[1] || match[2])
+    },
+    async downloadFile(
+      input: Input,
+      options: DownloadFileOptions,
+    ): Promise<string> {
+      const response = await this.request(input, options)
+      if (!response.body) {
+        throw new Error('响应体为空，无法下载文件')
+      }
 
-  head<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.request<T, P>({ ...config, method: 'HEAD' })
-  }
+      let fullPath = options.savePath
+      if (!options.filename) {
+        const disposition = response.headers.get('Content-Disposition')
+        options.filename
+          = !disposition
+            ? 'download.bin'
+            : this.extractFilenameFromHeader(disposition) ?? 'download.bin'
+      }
 
-  options<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.request<T, P>({ ...config, method: 'OPTIONS' })
-  }
+      fullPath = path.join(fullPath, options.filename)
+      await fs.promises.mkdir(path.dirname(fullPath), { recursive: true })
 
-  post<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.request<T, P>({ ...config, method: 'POST' })
-  }
+      const nodeStream = stream.Readable.fromWeb(response.body)
+      const fileStream = fs.createWriteStream(fullPath)
+      await stream.promises.pipeline(nodeStream, fileStream)
 
-  put<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.request<T, P>({ ...config, method: 'PUT' })
-  }
-
-  patch<T, P = null>(config: AxiosRequestConfig<P>) {
-    return this.request<T, P>({ ...config, method: 'PATCH' })
-  }
-
-  extractFilenameFromHeader(disposition?: string): string | null {
-    if (!disposition)
-      return null
-    const match = disposition.match(/filename="?(.+)"?/)
-    return match ? decodeURIComponent(match[1]) : null
-  }
-
-  async downloadFile(
-    config: AxiosRequestConfig,
-    savePath: string,
-    filename: string | null = null,
-  ): Promise<string> {
-    const response = await this.request<Readable>({
-      ...config,
-      responseType: 'stream',
-    })
-
-    let fullPath = savePath
-    if (!filename) {
-      fullPath = path.join(
-        fullPath,
-        this.extractFilenameFromHeader(response.headers['content-disposition']) || 'download.bin',
-      )
-    }
-    else {
-      fullPath = path.join(fullPath, filename)
-    }
-
-    const writer = fs.createWriteStream(fullPath)
-
-    response.data.pipe(writer)
-
-    return new Promise((resolve, reject) => {
-      writer.on('finish', () => resolve(fullPath))
-      writer.on('error', reject)
-    })
-  }
+      return fullPath
+    },
+  })
 }

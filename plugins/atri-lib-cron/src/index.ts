@@ -1,52 +1,49 @@
-import type { AddCronOptions, CronConfig } from './types/index.js'
-import { Logger, LogLevel } from '@huan_kong/logger'
+import { definePlugin } from '@atri-bot/core'
 import { CronJob } from 'cron'
+import packageJson from '../package.json' with { type: 'json' }
 
-// 统一所有实例化后的 cronJobs
-export const cronJobs: Record<string, CronJob> = {}
+// 所有实例化后的 cronJobs
+const cronJobs: Record<string, CronJob> = {}
 
-export class Cron {
-  config: CronConfig
-  logger: Logger
+export interface CronConfig {
+  timeZone?: string
+}
 
-  constructor(config: CronConfig) {
-    this.config = config
-    this.logger = new Logger({
-      title: 'Cron',
-      level: config.logLevel ?? (config.debug ? LogLevel.DEBUG : undefined),
-    })
-  }
+export type AddCronOptions = Parameters<typeof CronJob.from>[0] & { name: string }
 
-  add(options: AddCronOptions): [false, string] | [true, CronJob] {
-    if (cronJobs[options.name]) {
-      return [false, 'name already exists']
-    }
+export function CronPlugin(config: CronConfig) {
+  return definePlugin({
+    pluginName: packageJson.name,
+    config,
+    install() {},
+    uninstall() {},
 
-    if (!('timeZone' in options)) {
-      options.timeZone = this.config.timeZone ?? 'Asia/Shanghai'
-    }
-
-    options.onTick = ((originFunction) => {
-      return async () => {
-        this.logger.DEBUG('定时任务触发!')
-        await originFunction()
+    getCronJobs() {
+      return cronJobs
+    },
+    add(options: AddCronOptions): [false, string] | [true, CronJob] {
+      if (cronJobs[options.name]) {
+        return [false, 'name already exists']
       }
-    })(options.onTick)
 
-    const job = CronJob.from(options) as CronJob
-    cronJobs[options.name] = job
-    return [true, job]
-  }
+      if (!('timeZone' in options)) {
+        options.timeZone = this.config.timeZone ?? 'Asia/Shanghai'
+      }
 
-  remove(name: string): void {
-    const job = cronJobs[name]
-    if (job) {
+      const job = CronJob.from(options) as CronJob
+      cronJobs[options.name] = job
+
+      return [true, job]
+    },
+
+    remove(name: string): void {
+      const job = cronJobs[name]
+      if (!job) {
+        return
+      }
+
       job.stop()
       delete cronJobs[name]
-      this.logger.DEBUG(`定时任务 ${name} 已移除`)
-    }
-    else {
-      this.logger.WARN(`定时任务 ${name} 不存在，无法移除`)
-    }
-  }
+    },
+  })
 }

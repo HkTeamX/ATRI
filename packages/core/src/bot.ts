@@ -6,7 +6,7 @@ import type { MaybePromise, NonEmptyArray } from './utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
-import { sortObjectArray } from './utils.js'
+import { decodeUnicode, sortObjectArray } from './utils.js'
 
 export type BotConfig = NCWebsocketOptions & {
   logLevel?: LogLevelType
@@ -33,6 +33,10 @@ export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHand
   callback: (context: CommandContext<T, K>) => MaybePromise<void | 'quit'>
 }
 
+export interface MessageContext<T extends keyof MessageHandler> {
+  context: MessageHandler[T]
+}
+
 export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHandler> {
   type: 'message'
   endPoint?: T
@@ -41,7 +45,11 @@ export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHand
   needReply?: boolean
   needAdmin?: boolean
   pluginName: string
-  callback: (context: MessageHandler[T]) => MaybePromise<void | 'quit'>
+  callback: (context: MessageContext<T>) => MaybePromise<void | 'quit'>
+}
+
+export interface NoticeContext<T extends keyof NoticeHandler> {
+  context: NoticeHandler[T]
 }
 
 export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler> {
@@ -49,7 +57,11 @@ export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler
   endPoint?: T
   priority?: number
   pluginName: string
-  callback: (context: NoticeHandler[T]) => MaybePromise<void | 'quit'>
+  callback: (context: NoticeContext<T>) => MaybePromise<void | 'quit'>
+}
+
+export interface RequestContext<T extends keyof RequestHandler> {
+  context: RequestHandler[T]
 }
 
 export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHandler> {
@@ -57,7 +69,7 @@ export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHand
   endPoint?: T
   priority?: number
   pluginName: string
-  callback: (context: RequestHandler[T]) => MaybePromise<void | 'quit'>
+  callback: (context: RequestContext<T>) => MaybePromise<void | 'quit'>
 }
 
 export type RegEventOptions = CommandEvent | MessageEvent | NoticeEvent | RequestEvent
@@ -144,7 +156,7 @@ export class Bot {
         }
 
         try {
-          const result = await event.callback(context)
+          const result = await event.callback({ context })
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
@@ -200,7 +212,7 @@ export class Bot {
         catch (error) {
           if (error instanceof Error && error.stack?.toString().includes('yargs')) {
             await this.sendMsg(context, [
-              Structs.text(`命令使用错误: ${error.message}\n\n`),
+              Structs.text(`命令使用错误:\n${error.message}\n\n`),
               Structs.text(await event.commander?.()?.getHelp() ?? '无帮助信息'),
             ])
             continue
@@ -224,7 +236,7 @@ export class Bot {
         }
 
         try {
-          const result = await event.callback(context)
+          const result = await event.callback({ context })
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
@@ -259,7 +271,7 @@ export class Bot {
         }
 
         try {
-          const result = await event.callback(context)
+          const result = await event.callback({ context })
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
@@ -310,15 +322,17 @@ export class Bot {
   regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type'>) {
     const event = { ..._event, type: 'command' } as CommandEvent
     if (event.commander) {
-      event.commander = (
-        originCommander =>
-          () => originCommander()
-            .exitProcess(false)
-            .usage(`用法: ${event.trigger} [选项]`)
-            .locale(this.config.yargsLocale ?? 'zh_CN')
-            .help(false)
-            .version(false)
-      )(event.commander)
+      // 如果 commander 不是函数，则包装成函数
+      if (typeof event.commander !== 'function') {
+        event.commander = (commander => () => commander)(event.commander)
+      }
+
+      event.commander()
+        .exitProcess(false)
+        .usage(`用法: ${decodeUnicode(event.trigger.toString())} [选项]`)
+        .locale(this.config.yargsLocale ?? 'zh_CN')
+        .help(false)
+        .version(false)
     }
 
     this.events.command = sortObjectArray([...this.events.command, event], 'priority', 'down')

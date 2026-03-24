@@ -3,8 +3,8 @@ import type { BotConfig } from './bot.js'
 import type { definePluginReturnType, Plugin } from './plugin.js'
 import path from 'node:path'
 import { defaultTransformer, Logger, saveFileTransformer } from '@huan_kong/logger'
-import { Glob } from 'bun'
 import fs from 'fs-extra'
+import PackageJson from '../package.json' with { type: 'json' }
 import { Bot } from './bot.js'
 
 export interface ATRIConfig {
@@ -14,14 +14,15 @@ export interface ATRIConfig {
   logDir: string
   saveLogs: boolean
   maxFiles?: number
-  plugins?: definePluginReturnType<any>[]
+  plugins?: definePluginReturnType<any, any>[]
 }
 
 export class ATRI {
+  version = PackageJson.version
   config: ATRIConfig
   logger: Logger
   bot: Bot
-  plugins: { [key: string]: Plugin<any> } = {}
+  plugins: { [key: string]: Plugin<any, any> } = {}
   configs: { [key: string]: any } = {}
 
   private normalizeConfigKey(pluginName: string) {
@@ -29,8 +30,7 @@ export class ATRI {
   }
 
   private async removeUselessLogs() {
-    const glob = new Glob(`${this.config.logDir}/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log`)
-    const files = await Array.fromAsync(glob.scan())
+    const files = await Array.fromAsync(fs.promises.glob(`${this.config.logDir}/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log`))
     const maxFiles = this.config.maxFiles ?? 30
 
     if (files.length <= maxFiles)
@@ -48,6 +48,7 @@ export class ATRI {
     this.config = config
     this.logger = new Logger({
       title: 'ATRI',
+      level: config.logLevel,
       transformers: [
         defaultTransformer,
         ...(this.config.saveLogs
@@ -90,7 +91,7 @@ export class ATRI {
     this.logger.INFO(`ATRI 初始化完成`)
   }
 
-  async installPlugin<T extends object>(plugin: definePluginReturnType<T>) {
+  async installPlugin<T extends object, Extra extends object>(plugin: definePluginReturnType<T, Extra>) {
     const pluginInstance = await plugin(this)
     if (pluginInstance.pluginName in this.plugins) {
       this.logger.WARN(`插件 ${pluginInstance.pluginName} 已经安装，跳过本次安装`)
@@ -113,6 +114,7 @@ export class ATRI {
     for (const unload of unloaders) {
       unload()
     }
+    this.bot.unloaders[pluginName] = []
 
     await plugin.uninstall()
     delete this.plugins[pluginName]

@@ -7,11 +7,16 @@
   "scripts": {
     "dev": "nodemon",
     "start": "bun run ./src/index.ts",
-    "lint": "eslint .",
+    "lint": "eslint",
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
     "@atri-bot/core": "workspace:*",
+    "@atri-bot/lib-db": "workspace:*",
+    "@atri-bot/plugin-help": "workspace:*",
+    "@atri-bot/plugin-ping": "workspace:*",
+    "@atri-bot/plugin-proxy": "workspace:*",
+    "@atri-bot/plugin-the-cake-is-a-lie": "workspace:*",
     "@huan_kong/logger": "^2.0.2",
     "node-napcat-ts": "^0.4.23",
     "yargs": "^18.0.0"

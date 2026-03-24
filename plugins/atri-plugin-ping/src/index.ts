@@ -1,43 +1,49 @@
-import type { CommandCallback } from '@atri-bot/core'
-import type { SendMessageSegment } from 'node-napcat-ts'
-import { BasePlugin } from '@atri-bot/core'
-import { Command } from 'commander'
-import { convertCQCodeToJSON } from 'node-napcat-ts'
+import type { CommandContext } from '@atri-bot/core'
+import { definePlugin } from '@atri-bot/core'
+import { Structs } from 'node-napcat-ts'
+import yargs from 'yargs'
+import packageJson from '../package.json' with { type: 'json' }
 
-export interface PingConfig {
-  defaultReply: string
-}
+const pingCommander = yargs().option('reply', {
+  alias: 'r',
+  type: 'string',
+  description: '自定义回复内容',
+  demandOption: true,
+})
 
-export interface PingCommandContext {
-  args: [string?]
-  params: { reply?: string }
-}
+export const PingPlugin = definePlugin(() => {
+  return {
+    pluginName: packageJson.name,
+    defaultConfig: {
+      defaultReply: 'pong',
+    },
+    install() {
+      this.regCommandEvent({
+        trigger: 'ping',
+        commander: pingCommander,
+        callback: async ({ context, options }) => {
+          await this.bot.sendMsg(
+            context,
+            [Structs.text(options.reply ?? this.config.defaultReply)],
+            { reply: false, at: false },
+          )
+        },
+      })
 
-export class Plugin extends BasePlugin<PingConfig> {
-  defaultConfig: PingConfig = {
-    defaultReply: 'pong',
+      this.regCommandEvent({
+        trigger: 'ping2',
+        commander: pingCommander,
+        callback: this.handlePingCommand.bind(this),
+      })
+    },
+    uninstall() {},
+
+    async handlePingCommand({ context, options }: CommandContext<'message', typeof pingCommander>) {
+      await this.bot.sendMsg(
+        context,
+        [Structs.text(options.reply ?? this.config.defaultReply)],
+        { reply: false, at: false },
+      )
+    },
   }
-
-  load() {
-    this.regCommandEvent({
-      commandName: 'ping',
-      commander: new Command()
-        .description('测试机器人是否在线')
-        .argument('[reply]', '回复内容')
-        .option('-r, --reply [reply]', '回复内容'),
-      callback: this.handlePingCommand.bind(this),
-    })
-  }
-
-  unload() {}
-
-  private async handlePingCommand({ context, args, params }: CommandCallback<PingCommandContext>) {
-    await this.bot.sendMsg(
-      context,
-      convertCQCodeToJSON(
-        params.reply ?? args[0] ?? this.config.defaultReply,
-      ) as SendMessageSegment[],
-      { reply: false, at: false },
-    )
-  }
-}
+})

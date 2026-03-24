@@ -1,31 +1,30 @@
-import { BasePlugin } from '@atri-bot/core'
+import { definePlugin } from '@atri-bot/core'
 import proxy from '@huan_kong/node-global-proxy'
+import PackageJson from '../package.json' with { type: 'json' }
 
 export type ProxyConfig
-  = | {
-    enable: false
-  }
-  | {
-    enable: true
-    proxy: {
-      http: string
-      https: string
+  = | { enable: false }
+    | {
+      enable: true
+      proxy: {
+        http: string
+        https: string
+      }
     }
-  }
 
-export class Plugin extends BasePlugin<ProxyConfig> {
-  defaultConfig: ProxyConfig = {
+export const ProxyPlugin = definePlugin<ProxyConfig>({
+  pluginName: PackageJson.name,
+  defaultConfig: {
     enable: false,
-  }
-
-  load() {
-    if (!this.config.enable)
+  },
+  install() {
+    if (!this.config.enable) {
       return
+    }
     proxy.setConfig(this.config.proxy)
     proxy.start()
-  }
-
-  unload() {
+  },
+  uninstall() {
     proxy.stop()
-  }
-}
+  },
+})
