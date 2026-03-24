@@ -6,12 +6,14 @@ import { defaultTransformer, Logger, saveFileTransformer } from '@huan_kong/logg
 import fs from 'fs-extra'
 import PackageJson from '../package.json' with { type: 'json' }
 import { Bot } from './bot.js'
+import { normalizePluginName } from './utils.js'
 
 export interface ATRIConfig {
   logLevel?: LogLevelType
   botConfig: BotConfig
   configDir: string
   logDir: string
+  dataDir: string
   saveLogs: boolean
   maxFiles?: number
   disableATRIFlag?: boolean
@@ -25,10 +27,6 @@ export class ATRI {
   bot: Bot
   plugins: { [key: string]: Plugin<any, any> } = {}
   configs: { [key: string]: any } = {}
-
-  private normalizeConfigKey(pluginName: string) {
-    return pluginName.replaceAll('/', '__')
-  }
 
   private async removeUselessLogs() {
     const files = await Array.fromAsync(fs.promises.glob(`${this.config.logDir}/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log`))
@@ -130,7 +128,7 @@ export class ATRI {
       return {} as T
     }
 
-    pluginName = this.normalizeConfigKey(pluginName)
+    pluginName = normalizePluginName(pluginName)
 
     if (!refresh) {
       return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
@@ -158,7 +156,7 @@ export class ATRI {
   }
 
   async saveConfig<T extends object>(pluginName: string, config: T) {
-    pluginName = this.normalizeConfigKey(pluginName)
+    pluginName = normalizePluginName(pluginName)
 
     await fs.ensureDir(this.config.configDir)
 

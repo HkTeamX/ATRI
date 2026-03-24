@@ -4,11 +4,14 @@ import type { Argv } from 'yargs'
 import type { ATRI } from './atri.js'
 import type { CommandEvent, MessageEvent, NoticeEvent, RequestEvent } from './bot.js'
 import type { MaybePromise } from './utils.js'
+import path from 'node:path'
+import { normalizePluginName } from './utils.js'
 
 export interface PluginRuntime<TExtraFields extends object, TConfig extends object> {
   atri: ATRI
   bot: ATRI['bot']
   ws: ATRI['bot']['ws']
+  dataDir: string
   config: TConfig
   logger: Logger
   refreshConfig: () => Promise<void>
@@ -51,6 +54,7 @@ export function definePlugin<TExtraFields extends object = object, TConfig exten
       atri,
       bot: atri.bot,
       ws: atri.bot.ws,
+      dataDir: path.join(atri.config.dataDir, normalizePluginName(computedPluginOptions.pluginName)),
       config: computedPluginOptions.config ?? await atri.loadConfig<TConfig>(computedPluginOptions.pluginName, computedPluginOptions.defaultConfig),
       logger: atri.logger.clone({ title: computedPluginOptions.pluginName }),
       refreshConfig: async () => {
