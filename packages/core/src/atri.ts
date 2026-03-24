@@ -14,6 +14,7 @@ export interface ATRIConfig {
   logDir: string
   saveLogs: boolean
   maxFiles?: number
+  disableATRIFlag?: boolean
   plugins?: definePluginReturnType<any, any>[]
 }
 
@@ -71,16 +72,19 @@ export class ATRI {
   }
 
   async init() {
-    console.log(
-      `%c              __               .__
+    if (this.config.disableATRIFlag) {
+      console.log('\x1Bc')
+      console.log(
+        `%c              __               .__
   _____     _/  |_   _______   |__|
   \\__  \\    \\   __\\  \\_  __ \\  |  |
    / __ \\_   |  |     |  | \\/  |  |
   (____  /   |__|     |__|     |__|
        \\/`,
-      `font-family: Consolas;`,
-    )
-    this.logger.INFO(`アトリは、高性能ですから！`)
+        `font-family: Consolas;`,
+      )
+      this.logger.INFO(`アトリは、高性能ですから！`)
+    }
 
     await this.bot.init()
 
@@ -91,7 +95,7 @@ export class ATRI {
     this.logger.INFO(`ATRI 初始化完成`)
   }
 
-  async installPlugin<T extends object, Extra extends object>(plugin: definePluginReturnType<T, Extra>) {
+  async installPlugin<TExtraFields extends object, TConfig extends object>(plugin: definePluginReturnType<TExtraFields, TConfig>) {
     const pluginInstance = await plugin(this)
     if (pluginInstance.pluginName in this.plugins) {
       this.logger.WARN(`插件 ${pluginInstance.pluginName} 已经安装，跳过本次安装`)
