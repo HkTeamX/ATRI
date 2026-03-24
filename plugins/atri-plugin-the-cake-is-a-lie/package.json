@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/plugin-the-cake-is-a-lie",
   "type": "module",
-  "version": "1.1.6",
+  "version": "2.0.0",
   "description": "the cake is a lie plugin for atri framework",
   "author": "huan_kong",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@atri-bot/core": "^2.0.0-beta.8",
+    "@atri-bot/core": "^2.0.0",
     "node-napcat-ts": "^0.4.23",
     "yargs": "^18.0.0"
   },

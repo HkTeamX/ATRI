@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/plugin-help",
   "type": "module",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "help plugin for atri framework",
   "author": "huan_kong",
   "license": "MIT",

@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/lib-request",
   "type": "module",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "request lib for atri framework",
   "author": "huan_kong",
   "license": "MIT",

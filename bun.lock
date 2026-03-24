@@ -52,25 +52,25 @@
     },
     "plugins/atri-lib-cron": {
       "name": "@atri-bot/lib-cron",
-      "version": "1.1.6",
+      "version": "2.0.0",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0-beta.3",
+        "@atri-bot/core": "^2.0.0",
         "cron": "^4.4.0",
         "cron-validate": "^1.5.3",
       },
     },
     "plugins/atri-lib-db": {
       "name": "@atri-bot/lib-db",
-      "version": "1.2.0",
+      "version": "2.0.0",
       "dependencies": {
         "@atri-bot/core": "^2.0.0",
         "@huan_kong/logger": "^2.0.2",
-        "drizzle-orm": "^1.0.0-beta.18-7eb39f0",
+        "drizzle-orm": "^1.0.0-beta.19",
       },
     },
     "plugins/atri-lib-request": {
       "name": "@atri-bot/lib-request",
-      "version": "1.1.12",
+      "version": "2.0.0",
       "dependencies": {
         "@atri-bot/core": "^2.0.0",
         "@huan_kong/logger": "^2.0.2",
@@ -79,7 +79,7 @@
     },
     "plugins/atri-plugin-help": {
       "name": "@atri-bot/plugin-help",
-      "version": "1.2.0",
+      "version": "2.0.0",
       "dependencies": {
         "@atri-bot/core": "^2.0.0",
         "node-napcat-ts": "^0.4.23",
@@ -91,9 +91,9 @@
     },
     "plugins/atri-plugin-ping": {
       "name": "@atri-bot/plugin-ping",
-      "version": "1.1.6",
+      "version": "2.0.0",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0-beta.6",
+        "@atri-bot/core": "^2.0.0",
         "node-napcat-ts": "^0.4.23",
         "yargs": "^18.0.0",
       },
@@ -103,9 +103,9 @@
     },
     "plugins/atri-plugin-proxy": {
       "name": "@atri-bot/plugin-proxy",
-      "version": "1.1.0",
+      "version": "2.0.0",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0-beta.6",
+        "@atri-bot/core": "^2.0.0",
         "@huan_kong/node-global-proxy": "^1.0.2",
       },
     },
@@ -113,12 +113,12 @@
       "name": "@atri-bot/plugin-the-cake-is-a-lie",
       "version": "1.1.6",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0-beta.8",
-        "node-napcat-ts": "^0.4.23",
-        "yargs": "^18.0.0",
+        "@atri-bot/core": "latest",
+        "node-napcat-ts": "latest",
+        "yargs": "latest",
       },
       "devDependencies": {
-        "@types/yargs": "^17.0.35",
+        "@types/yargs": "latest",
       },
     },
   },
@@ -703,7 +703,7 @@
 
     "diff-sequences": ["diff-sequences@29.6.3", "", {}, "sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q=="],
 
-    "drizzle-orm": ["drizzle-orm@1.0.0-beta.9-e89174b", "", { "peerDependencies": { "@aws-sdk/client-rds-data": ">=3", "@cloudflare/workers-types": ">=4", "@effect/sql": "^0.48.5", "@effect/sql-pg": "^0.49.7", "@electric-sql/pglite": ">=0.2.0", "@libsql/client": ">=0.10.0", "@libsql/client-wasm": ">=0.10.0", "@neondatabase/serverless": ">=0.10.0", "@op-engineering/op-sqlite": ">=2", "@opentelemetry/api": "^1.4.1", "@planetscale/database": ">=1.13", "@prisma/client": "*", "@sqlitecloud/drivers": ">=1.0.653", "@tidbcloud/serverless": "*", "@tursodatabase/database": ">=0.2.1", "@tursodatabase/database-common": ">=0.2.1", "@tursodatabase/database-wasm": ">=0.2.1", "@types/better-sqlite3": "*", "@types/mssql": "^9.1.4", "@types/pg": "*", "@types/sql.js": "*", "@upstash/redis": ">=1.34.7", "@vercel/postgres": ">=0.8.0", "@xata.io/client": "*", "better-sqlite3": ">=9.3.0", "bun-types": "*", "expo-sqlite": ">=14.0.0", "gel": ">=2", "mssql": "^11.0.1", "mysql2": ">=2", "pg": ">=8", "postgres": ">=3", "sql.js": ">=1", "sqlite3": ">=5" }, "optionalPeers": ["@aws-sdk/client-rds-data", "@cloudflare/workers-types", "@effect/sql", "@effect/sql-pg", "@electric-sql/pglite", "@libsql/client", "@libsql/client-wasm", "@neondatabase/serverless", "@op-engineering/op-sqlite", "@opentelemetry/api", "@planetscale/database", "@prisma/client", "@sqlitecloud/drivers", "@tidbcloud/serverless", "@tursodatabase/database", "@tursodatabase/database-common", "@tursodatabase/database-wasm", "@types/better-sqlite3", "@types/pg", "@types/sql.js", "@upstash/redis", "@vercel/postgres", "@xata.io/client", "better-sqlite3", "bun-types", "expo-sqlite", "gel", "mysql2", "pg", "postgres", "sql.js", "sqlite3"] }, "sha512-B5KR/qYMZ0JMOurK+0xi1ObpOQcgrjaC9wHUiU2eTJjLemuh2CoQIw6yur68NxZG6Xcd0b9qghUNC/78/bEfbg=="],
+    "drizzle-orm": ["drizzle-orm@1.0.0-beta.19", "", { "peerDependencies": { "@aws-sdk/client-rds-data": ">=3", "@cloudflare/workers-types": ">=4", "@effect/sql": "^0.48.5", "@effect/sql-pg": "^0.49.7", "@electric-sql/pglite": ">=0.2.0", "@libsql/client": ">=0.10.0", "@libsql/client-wasm": ">=0.10.0", "@neondatabase/serverless": ">=0.10.0", "@op-engineering/op-sqlite": ">=2", "@opentelemetry/api": "^1.4.1", "@planetscale/database": ">=1.13", "@sinclair/typebox": ">=0.34.8", "@sqlitecloud/drivers": ">=1.0.653", "@tidbcloud/serverless": "*", "@tursodatabase/database": ">=0.2.1", "@tursodatabase/database-common": ">=0.2.1", "@tursodatabase/database-wasm": ">=0.2.1", "@types/better-sqlite3": "*", "@types/mssql": "^9.1.4", "@types/pg": "*", "@types/sql.js": "*", "@upstash/redis": ">=1.34.7", "@vercel/postgres": ">=0.8.0", "@xata.io/client": "*", "arktype": ">=2.0.0", "better-sqlite3": ">=9.3.0", "bun-types": "*", "expo-sqlite": ">=14.0.0", "gel": ">=2", "mssql": "^11.0.1", "mysql2": ">=2", "pg": ">=8", "postgres": ">=3", "sql.js": ">=1", "sqlite3": ">=5", "typebox": ">=1.0.0", "valibot": ">=1.0.0-beta.7", "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["@aws-sdk/client-rds-data", "@cloudflare/workers-types", "@effect/sql", "@effect/sql-pg", "@electric-sql/pglite", "@libsql/client", "@libsql/client-wasm", "@neondatabase/serverless", "@op-engineering/op-sqlite", "@opentelemetry/api", "@planetscale/database", "@sinclair/typebox", "@sqlitecloud/drivers", "@tidbcloud/serverless", "@tursodatabase/database", "@tursodatabase/database-common", "@tursodatabase/database-wasm", "@types/better-sqlite3", "@types/pg", "@types/sql.js", "@upstash/redis", "@vercel/postgres", "@xata.io/client", "arktype", "better-sqlite3", "bun-types", "expo-sqlite", "gel", "mysql2", "pg", "postgres", "sql.js", "sqlite3", "typebox", "valibot", "zod"] }, "sha512-wL8FoHl9NRVYdrescFWyAVY5rNuEmbY4KDqO6Qo4RTVt1rYMbz7btq5Mhg91GN3x+qeUbQ83l9QkHYd4QmVTvg=="],
 
     "dts-resolver": ["dts-resolver@2.1.3", "", { "peerDependencies": { "oxc-resolver": ">=11.0.0" }, "optionalPeers": ["oxc-resolver"] }, "sha512-bihc7jPC90VrosXNzK0LTE2cuLP6jr0Ro8jk+kMugHReJVLIpHz/xadeq3MhuwyO4TD4OA3L1Q8pBBFRc08Tsw=="],
 
@@ -1398,6 +1398,8 @@
     "yup": ["yup@1.7.1", "", { "dependencies": { "property-expr": "^2.0.5", "tiny-case": "^1.0.3", "toposort": "^2.0.2", "type-fest": "^2.19.0" } }, "sha512-GKHFX2nXul2/4Dtfxhozv701jLQHdf6J34YDh2cEkpqoo8le5Mg6/LrdseVLrFarmFygZTlfIhHx/QKfb/QWXw=="],
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
+
+    "@atri-bot/plugin-the-cake-is-a-lie/@atri-bot/core": ["@atri-bot/core@2.0.0", "", { "dependencies": { "@huan_kong/logger": "^2.0.2", "fs-extra": "^11.3.4", "node-napcat-ts": "^0.4.23", "yargs": "^18.0.0" } }, "sha512-16hE7suauAFgBl3WN1Y3T1SiAh/Qxdjdzf2vwsi1xNx53Z4EFjAqKnR3ISthgLL+TID05IvPsQkfn0kHDFpF1w=="],
 
     "@babel/types/@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@8.0.0-rc.2", "", {}, "sha512-xExUBkuXWJjVuIbO7z6q7/BA9bgfJDEhVL0ggrggLMbg0IzCUWGT1hZGE8qUH7Il7/RD/a6cZ3AAFrrlp1LF/A=="],
 
