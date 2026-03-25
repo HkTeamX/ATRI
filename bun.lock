@@ -14,10 +14,13 @@
     },
     "packages/core": {
       "name": "@atri-bot/core",
-      "version": "2.0.2",
+      "version": "2.0.9",
       "dependencies": {
         "@huan_kong/logger": "^2.0.2",
+        "cron": "^4.4.0",
+        "drizzle-orm": "^1.0.0-beta.19",
         "fs-extra": "^11.3.4",
+        "ky": "^1.14.3",
         "node-napcat-ts": "^0.4.23",
         "yargs": "^18.0.0",
       },
@@ -37,7 +40,6 @@
       "name": "@atri-bot/example",
       "dependencies": {
         "@atri-bot/core": "workspace:*",
-        "@atri-bot/lib-db": "workspace:*",
         "@atri-bot/plugin-help": "workspace:*",
         "@atri-bot/plugin-ping": "workspace:*",
         "@atri-bot/plugin-proxy": "workspace:*",
@@ -53,36 +55,36 @@
     },
     "plugins/atri-lib-cron": {
       "name": "@atri-bot/lib-cron",
-      "version": "2.0.1",
+      "version": "2.0.4",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0",
+        "@atri-bot/core": "^2.0.7",
         "cron": "^4.4.0",
         "cron-validate": "^1.5.3",
       },
     },
     "plugins/atri-lib-db": {
       "name": "@atri-bot/lib-db",
-      "version": "2.0.2",
+      "version": "2.0.6",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0",
+        "@atri-bot/core": "^2.0.7",
         "@huan_kong/logger": "^2.0.2",
         "drizzle-orm": "^1.0.0-beta.19",
       },
     },
     "plugins/atri-lib-request": {
       "name": "@atri-bot/lib-request",
-      "version": "2.0.0",
+      "version": "2.0.2",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0",
+        "@atri-bot/core": "^2.0.7",
         "@huan_kong/logger": "^2.0.2",
         "ky": "^1.14.3",
       },
     },
     "plugins/atri-plugin-help": {
       "name": "@atri-bot/plugin-help",
-      "version": "2.0.1",
+      "version": "2.0.3",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0",
+        "@atri-bot/core": "^2.0.7",
         "node-napcat-ts": "^0.4.23",
         "yargs": "^18.0.0",
       },
@@ -92,9 +94,9 @@
     },
     "plugins/atri-plugin-ping": {
       "name": "@atri-bot/plugin-ping",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0",
+        "@atri-bot/core": "^2.0.7",
         "node-napcat-ts": "^0.4.23",
         "yargs": "^18.0.0",
       },
@@ -104,17 +106,17 @@
     },
     "plugins/atri-plugin-proxy": {
       "name": "@atri-bot/plugin-proxy",
-      "version": "2.0.1",
+      "version": "2.0.3",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0",
+        "@atri-bot/core": "^2.0.7",
         "@huan_kong/node-global-proxy": "^1.0.2",
       },
     },
     "plugins/atri-plugin-the-cake-is-a-lie": {
       "name": "@atri-bot/plugin-the-cake-is-a-lie",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "dependencies": {
-        "@atri-bot/core": "^2.0.0",
+        "@atri-bot/core": "^2.0.7",
         "node-napcat-ts": "^0.4.23",
         "yargs": "^18.0.0",
       },
@@ -506,7 +508,7 @@
 
     "@types/ms": ["@types/ms@2.1.0", "", {}, "sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA=="],
 
-    "@types/mssql": ["@types/mssql@9.1.9", "", { "dependencies": { "@types/node": "*", "tarn": "^3.0.1", "tedious": "*" } }, "sha512-P0nCgw6vzY23UxZMnbI4N7fnLGANt4LI4yvxze1paPj+LuN28cFv5EI+QidP8udnId/BKhkcRhm/BleNsjK65A=="],
+    "@types/mssql": ["@types/mssql@9.1.10", "", { "dependencies": { "@types/node": "*", "tarn": "^3.0.1", "tedious": "*" } }, "sha512-h3ImCiKdO7SM+2P1ToAZ+O0Ip23iISUHplH5GgMGnM9AwjmusDv8QqoNztoNj6vXpFbX29axsIybte7J2Q3XNg=="],
 
     "@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
 

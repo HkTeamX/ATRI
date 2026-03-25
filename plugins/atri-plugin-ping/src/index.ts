@@ -17,10 +17,9 @@ const pingCommander = yargs().option('reply', {
   alias: 'r',
   type: 'string',
   description: '自定义回复内容',
-  demandOption: true,
 })
 
-export const PingPlugin = definePlugin<PingPluginProps, PingPluginConfig>({
+export const Plugin = definePlugin<PingPluginProps, PingPluginConfig>({
   pluginName: packageJson.name,
   defaultConfig: {
     defaultReply: 'pong',

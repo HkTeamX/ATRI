@@ -2,7 +2,6 @@
   "type": "module",
   "scripts": {
     "lint": "bun run --filter './{packages,plugins}/*' --filter '[lint]' lint",
-    "build": "bun run --filter '@atri-bot/core' build",
     "typecheck": "bun run --filter './{packages,plugins}/*' --filter '[typecheck]' typecheck",
     "clean": "rm -rf node_modules && bun install"
   },

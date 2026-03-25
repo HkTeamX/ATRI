@@ -11,7 +11,7 @@ const messages: SendMessageSegment[] = [
   Structs.text('But The Cake Is A Lie'),
 ]
 
-export const TheCakeIsALiePlugin = definePlugin(() => {
+export const Plugin = definePlugin(() => {
   return {
     pluginName: PackageJson.name,
     install() {
@@ -23,9 +23,7 @@ export const TheCakeIsALiePlugin = definePlugin(() => {
     uninstall() { },
     async cakeIsALie({ context }: MessageContext<'message'>) {
       messages.forEach(async (message, index) => {
-        setTimeout(async () => {
-          await this.bot.sendMsg(context, [message], { reply: false, at: false })
-        }, index * 1000)
+        setTimeout(() => this.bot.sendMsg(context, [message], { reply: false, at: false }), index * 1000)
       })
     },
   }

@@ -31,7 +31,7 @@ const helpCommander = yargs()
 
 const helpRegexp = /help|帮助/
 
-export const HelpPlugin = definePlugin<HelpPluginProps>({
+export const Plugin = definePlugin<HelpPluginProps>({
   pluginName: PackageJson.name,
   install() {
     this.regCommandEvent({
