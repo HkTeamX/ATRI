@@ -121,7 +121,7 @@ export class ATRI {
     catch {
       // 如果加载失败，且处于调试模式，尝试使用另一个路径加载
       try {
-        pluginModule = await this._importPlugin(options.modulesDir ?? this.config.modulesDir, importPath[0])
+        pluginModule = await this._importPlugin(options.modulesDir ?? this.config.modulesDir, importPath[1])
       }
       catch (error) {
         this.logger.ERROR(`插件 ${packageName} 加载失败:`, String(error))

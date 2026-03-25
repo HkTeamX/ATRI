@@ -9,6 +9,9 @@ const atri = new ATRI({
   logLevel: debug ? LogLevel.DEBUG : LogLevel.INFO,
   plugins: [
     '@atri-bot/plugin-ping',
+    '@atri-bot/plugin-proxy',
+    '@atri-bot/plugin-help',
+    '@atri-bot/plugin-the-cake-is-a-lie',
   ],
   configDir: './config',
   logDir: './logs',
