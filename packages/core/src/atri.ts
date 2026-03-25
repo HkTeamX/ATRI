@@ -1,16 +1,21 @@
 import type { LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
+import type { CronConfig } from './cron.js'
+import type { DBConfig } from './db.js'
 import type { definePluginReturnType, Plugin } from './plugin.js'
+import type { RequestConfig } from './request.js'
 import path from 'node:path'
 import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan_kong/logger'
 import fs from 'fs-extra'
 import PackageJson from '../package.json' with { type: 'json' }
 import { Bot } from './bot.js'
+import { Cron } from './cron.js'
+import { DB } from './db.js'
+import { Request } from './request.js'
 import { normalizePluginName } from './utils.js'
 
 export interface ATRIConfig {
   logLevel?: LogLevelType
-  botConfig: BotConfig
   configDir: string
   logDir: string
   dataDir: string
@@ -19,6 +24,11 @@ export interface ATRIConfig {
   maxFiles?: number
   disableATRIFlag?: boolean
   plugins?: string[]
+
+  botConfig: BotConfig
+  cronConfig: CronConfig
+  requestConfig: RequestConfig
+  dbConfig: DBConfig
 }
 
 export interface InstallPluginOptions {
@@ -34,6 +44,10 @@ export class ATRI {
   config: ATRIConfig
   logger: Logger
   bot: Bot
+  cron: Cron
+  request: Request
+  db: DB
+
   plugins: { [key: string]: Plugin<any, any> } = {}
   configs: { [key: string]: any } = {}
 
@@ -75,6 +89,18 @@ export class ATRI {
     this.bot = new Bot(this, {
       logLevel: config.logLevel,
       ...config.botConfig,
+    })
+    this.cron = new Cron(this, {
+      logLevel: config.logLevel,
+      ...config.cronConfig,
+    })
+    this.request = new Request(this, {
+      logLevel: config.logLevel,
+      ...config.requestConfig,
+    })
+    this.db = new DB(this, {
+      logLevel: config.logLevel,
+      ...config.dbConfig,
     })
   }
 
@@ -151,12 +177,6 @@ export class ATRI {
     this.plugins[pluginInstance.pluginName] = pluginInstance
     this.logger.INFO(`插件 ${pluginInstance.pluginName} 安装成功`)
 
-    return pluginInstance
-  }
-
-  async installLibPlugin<TExtraFields extends object, TConfig extends object>(plugin: definePluginReturnType<TExtraFields, TConfig>) {
-    const pluginInstance = await plugin(this)
-    await pluginInstance.install()
     return pluginInstance
   }
 

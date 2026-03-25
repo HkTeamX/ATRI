@@ -14,10 +14,13 @@
     },
     "packages/core": {
       "name": "@atri-bot/core",
-      "version": "2.0.8",
+      "version": "2.0.9",
       "dependencies": {
         "@huan_kong/logger": "^2.0.2",
+        "cron": "^4.4.0",
+        "drizzle-orm": "^1.0.0-beta.19",
         "fs-extra": "^11.3.4",
+        "ky": "^1.14.3",
         "node-napcat-ts": "^0.4.23",
         "yargs": "^18.0.0",
       },
@@ -61,7 +64,7 @@
     },
     "plugins/atri-lib-db": {
       "name": "@atri-bot/lib-db",
-      "version": "2.0.5",
+      "version": "2.0.6",
       "dependencies": {
         "@atri-bot/core": "^2.0.7",
         "@huan_kong/logger": "^2.0.2",

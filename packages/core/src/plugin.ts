@@ -1,8 +1,10 @@
 import type { Logger } from '@huan_kong/logger'
+import type { AnyRelations } from 'drizzle-orm'
 import type { MessageHandler, NoticeHandler, RequestHandler } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
 import type { ATRI } from './atri.js'
 import type { CommandEvent, MessageEvent, NoticeEvent, RequestEvent } from './bot.js'
+import type { DBAddOptions } from './db.js'
 import type { MaybePromise } from './utils.js'
 import path from 'node:path'
 import { normalizePluginName } from './utils.js'
@@ -11,6 +13,10 @@ export interface PluginRuntime<TExtraFields extends object, TConfig extends obje
   atri: ATRI
   bot: ATRI['bot']
   ws: ATRI['bot']['ws']
+  db: ATRI['db']
+  cron: ATRI['cron']
+  request: ATRI['request']
+
   dataDir: string
   config: TConfig
   logger: Logger
@@ -21,7 +27,6 @@ export interface PluginRuntime<TExtraFields extends object, TConfig extends obje
   regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(this: Plugin<TExtraFields, TConfig>, event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
   regNoticeEvent: <K extends keyof NoticeHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
   regRequestEvent: <K extends keyof RequestHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
-  installLibPlugin: ATRI['installLibPlugin']
 }
 
 export interface PluginBaseOptions<TConfig extends object> {
@@ -55,6 +60,9 @@ export function definePlugin<TExtraFields extends object = object, TConfig exten
       atri,
       bot: atri.bot,
       ws: atri.bot.ws,
+      db: atri.db,
+      cron: atri.cron,
+      request: atri.request,
       dataDir: path.join(atri.config.dataDir, normalizePluginName(computedPluginOptions.pluginName)),
       config: computedPluginOptions.config ?? await atri.loadConfig<TConfig>(computedPluginOptions.pluginName, computedPluginOptions.defaultConfig),
       logger: atri.logger.clone({ title: computedPluginOptions.pluginName }),
@@ -72,7 +80,12 @@ export function definePlugin<TExtraFields extends object = object, TConfig exten
       regCommandEvent: event => atri.bot.regCommandEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
       regNoticeEvent: event => atri.bot.regNoticeEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
       regRequestEvent: event => atri.bot.regRequestEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
-      installLibPlugin: atri.installLibPlugin.bind(atri),
+      addDb: <TSchema extends Record<string, unknown>, TRelations extends AnyRelations>(options: Omit<DBAddOptions<TSchema, TRelations>, 'pluginName'>) => {
+        return atri.db.add({
+          ...options,
+          pluginName: computedPluginOptions.pluginName,
+        })
+      },
     }
 
     return plugin
