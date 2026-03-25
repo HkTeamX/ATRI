@@ -4,6 +4,7 @@ import type { MigrationConfig } from 'drizzle-orm/migrator'
 import type { ATRI } from './atri.js'
 import { drizzle } from 'drizzle-orm/bun-sql'
 import { migrate } from 'drizzle-orm/bun-sql/migrator'
+import { timestamp } from 'drizzle-orm/pg-core'
 
 export interface DBConfig {
   connectionString: string
@@ -14,6 +15,14 @@ export interface DBAddOptions<TSchema extends Record<string, unknown>, TRelation
   pluginName: string
   config: DrizzleConfig<TSchema, TRelations>
   migration?: MigrationConfig
+}
+
+export const timestamps = {
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp()
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 }
 
 export class DB {
