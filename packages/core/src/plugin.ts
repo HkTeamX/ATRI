@@ -21,6 +21,7 @@ export interface PluginRuntime<TExtraFields extends object, TConfig extends obje
   regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(this: Plugin<TExtraFields, TConfig>, event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
   regNoticeEvent: <K extends keyof NoticeHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
   regRequestEvent: <K extends keyof RequestHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
+  installLibPlugin: ATRI['installLibPlugin']
 }
 
 export interface PluginBaseOptions<TConfig extends object> {
@@ -71,6 +72,7 @@ export function definePlugin<TExtraFields extends object = object, TConfig exten
       regCommandEvent: event => atri.bot.regCommandEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
       regNoticeEvent: event => atri.bot.regNoticeEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
       regRequestEvent: event => atri.bot.regRequestEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
+      installLibPlugin: atri.installLibPlugin.bind(atri),
     }
 
     return plugin

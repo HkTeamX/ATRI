@@ -1,61 +1,60 @@
 import type { AnyRelations, DrizzleConfig, EmptyRelations } from 'drizzle-orm'
+import type { BunSQLDatabase } from 'drizzle-orm/bun-sql/postgres/driver.js'
 import type { MigrationConfig } from 'drizzle-orm/migrator'
 import { definePlugin } from '@atri-bot/core'
-import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/bun-sql'
 import { migrate } from 'drizzle-orm/bun-sql/migrator'
 import PackageJson from '../package.json' with { type: 'json' }
 
-let initDbPluginOptions: InitDbPluginOptions | null = null
-
-export interface InitDbPluginOptions {
-  connectString: string
-  config?: DrizzleConfig
+export interface DbPluginProps<TSchema extends Record<string, unknown>, TRelations extends AnyRelations> {
+  drizzle?: BunSQLDatabase<TSchema, TRelations> & { $client: Bun.SQL }
 }
 
-export function InitDbPlugin(options: InitDbPluginOptions) {
-  return definePlugin({
-    pluginName: `${PackageJson.name}-init-db`,
-    async install() {
-      try {
-        const db = drizzle(options.connectString, options.config ?? {})
-        await db.execute(sql`SELECT 1;`)
-        initDbPluginOptions = options
-        this.logger.INFO('测试数据库连接成功')
-      }
-      catch (error) {
-        this.logger.ERROR('测试数据库连接失败', error)
-        throw error
-      }
-    },
-    uninstall() {},
-  })
+export interface DbPluginConfig {
+  connectionString?: string
 }
 
-export interface DbPluginOptions<TSchema extends Record<string, unknown>, TRelations extends AnyRelations> {
+export interface DbPluginOptions<TSchema extends Record<string, unknown>, TRelations extends AnyRelations> extends DbPluginConfig {
+  pluginName: string
   config: DrizzleConfig<TSchema, TRelations>
   migration?: MigrationConfig
 }
 
-export function DbPlugin<
-  TSchema extends Record<string, unknown>,
-  TRelations extends AnyRelations = EmptyRelations,
->(options: DbPluginOptions<TSchema, TRelations>) {
-  if (!initDbPluginOptions) {
-    throw new Error('请先通过 InitDbPlugin 插件初始化数据库连接')
-  }
+export function DbPlugin<TSchema extends Record<string, unknown>, TRelations extends AnyRelations = EmptyRelations>(options: DbPluginOptions<TSchema, TRelations>) {
+  return definePlugin<DbPluginProps<TSchema, TRelations>, DbPluginConfig>(() => {
+    let drizzleClient: (BunSQLDatabase<TSchema, TRelations> & { $client: Bun.SQL }) | undefined
 
-  return definePlugin({
-    pluginName: `${PackageJson.name}-db`,
-    drizzle: drizzle(initDbPluginOptions.connectString, { ...initDbPluginOptions.config, ...options.config } as DrizzleConfig<TSchema, TRelations>),
-    async install() {
-      // 自动执行迁移
-      if (!options.migration) {
-        return
-      }
+    return {
+      pluginName: PackageJson.name,
+      defaultConfig: {
+        connectionString: '',
+      },
+      get drizzle() {
+        return drizzleClient
+      },
+      async install() {
+        const connectionString = options.connectionString ?? this.config.connectionString
 
-      await migrate(this.drizzle, options.migration)
-    },
-    uninstall() {},
+        if (!connectionString || connectionString === '') {
+          const errorMessage = '请至少通过插件配置文件或 DbPlugin options 提供 connectionString 参数。'
+          this.logger.ERROR(errorMessage)
+          throw new Error(errorMessage)
+        }
+
+        drizzleClient = drizzle(connectionString, options.config)
+
+        if (!options.migration) {
+          return
+        }
+
+        await migrate(drizzleClient, {
+          ...options.migration,
+          migrationsTable: options.migration.migrationsTable ?? `migrations_${options.pluginName}`,
+        })
+      },
+      uninstall() {
+        drizzleClient = undefined
+      },
+    }
   })
 }

@@ -17,9 +17,10 @@ export interface CronPluginProps {
   remove: (name: string) => void
 }
 
-export function CronPlugin(config: CronConfig = {}) {
+export function Plugin(config?: CronConfig) {
   return definePlugin<CronPluginProps, CronConfig>({
     pluginName: packageJson.name,
+    defaultConfig: { timeZone: 'Asia/Shanghai' },
     config,
     install() {},
     uninstall() {},

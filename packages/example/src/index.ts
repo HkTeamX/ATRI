@@ -1,11 +1,6 @@
 import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import process from 'node:process'
 import { ATRI } from '@atri-bot/core'
-import { InitDbPlugin } from '@atri-bot/lib-db'
-import { HelpPlugin } from '@atri-bot/plugin-help'
-import { PingPlugin } from '@atri-bot/plugin-ping'
-import { ProxyPlugin } from '@atri-bot/plugin-proxy'
-import { TheCakeIsALiePlugin } from '@atri-bot/plugin-the-cake-is-a-lie'
 import { LogLevel } from '@huan_kong/logger'
 
 const debug = process.argv.includes('--debug')
@@ -13,16 +8,12 @@ const debug = process.argv.includes('--debug')
 const atri = new ATRI({
   logLevel: debug ? LogLevel.DEBUG : LogLevel.INFO,
   plugins: [
-    PingPlugin,
-    ProxyPlugin,
-    TheCakeIsALiePlugin,
-    HelpPlugin,
-    InitDbPlugin({
-      connectString: process.env.DATABASE_URL ?? '',
-    }),
+    '@atri-bot/plugin-ping',
   ],
   configDir: './config',
   logDir: './logs',
+  dataDir: './data',
+  modulesDir: '.',
   saveLogs: !debug,
   botConfig: {
     prefix: JSON.parse(process.env.PREFIX ?? '["/"]'),
