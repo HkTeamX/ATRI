@@ -93,10 +93,9 @@ export class ATRI {
   }
 
   async installPlugin(packageName: string) {
-    const fullPath = import.meta.resolve(packageName, `file://${this.config.modulesDir}/`)
     const importPaths = [
-      fullPath,
-      path.posix.join(fullPath, 'src/index.js'),
+      packageName,
+      path.posix.join(packageName, 'src/index.js'),
     ]
 
     if ((this.config.logLevel ?? LogLevel.INFO) <= LogLevel.DEBUG) {
@@ -105,11 +104,15 @@ export class ATRI {
 
     let pluginModule: { plugin: Plugin<any, any> }
     try {
-      pluginModule = await import(importPaths[0]) as { plugin: Plugin<any, any> }
+      pluginModule = await import(
+        import.meta.resolve(importPaths[0], `file://${this.config.modulesDir}/`),
+      ) as { plugin: Plugin<any, any> }
     }
     catch {
       try {
-        pluginModule = await import(importPaths[1]) as { plugin: Plugin<any, any> }
+        pluginModule = await import(
+          import.meta.resolve(importPaths[1], `file://${this.config.modulesDir}/`),
+        ) as { plugin: Plugin<any, any> }
       }
       catch (error) {
         this.logger.ERROR(`插件 ${packageName} 加载失败:`, error)
