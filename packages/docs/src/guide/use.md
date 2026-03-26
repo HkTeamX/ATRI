@@ -38,20 +38,16 @@ bun add @atri-bot/plugin-help @atri-bot/plugin-ping @huan_kong/logger node-napca
 import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import process from 'node:process'
 import { ATRI } from '@atri-bot/core'
-import { HelpPlugin } from '@atri-bot/plugin-help'
-import { PingPlugin } from '@atri-bot/plugin-ping'
 import { LogLevel } from '@huan_kong/logger'
 
 const debug = process.argv.includes('--debug')
 
 const atri = new ATRI({
   logLevel: debug ? LogLevel.DEBUG : LogLevel.INFO,
-  plugins: [
-    PingPlugin,
-    HelpPlugin,
-  ],
   configDir: './config',
   logDir: './logs',
+  dataDir: './data',
+  modulesDir: '.',
   saveLogs: !debug,
   botConfig: {
     prefix: JSON.parse(process.env.PREFIX ?? '["/"]'),
@@ -68,8 +64,16 @@ const atri = new ATRI({
   },
 })
 
-// 启动初始化流程
-atri.init()
+;(async () => {
+  await Promise.all([
+    atri.installPlugin('@atri-bot/plugin-ping'),
+    atri.installPlugin('@atri-bot/plugin-help'),
+    // 用于全局代理请求, 国内网络环境有需求的安装即可
+    // atri.installPlugin('@atri-bot/plugin-proxy'),
+  ])
+
+  await atri.init()
+})()
 ```
 
 ## 6.测试是否启动成功

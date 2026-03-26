@@ -3,23 +3,11 @@
 ## 1.定义插件
 
 ``` ts
-import { definePlugin } from '@atri-bot/core'
+import { Plugin } from '@atri-bot/core'
 
 // 定义一个插件
-export const plugin = definePlugin({
-  pluginName: '测试插件',
-  install() {},
-  uninstall() {}
-})
-
-// 定义一个函数式插件
-export const plugin2 = definePlugin(() => {
-  return {
-    pluginName: '测试插件',
-    install() {},
-    uninstall() {}
-  }
-})
+// 一个插件必须导出 plugin 变量
+export const plugin = new Plugin('插件名')
 ```
 
 ## 2.注册事件
@@ -27,17 +15,14 @@ export const plugin2 = definePlugin(() => {
 具体事件名可以参考 [node-napcat-ts](https://node-napcat-ts.huankong.top/guide/bind-event#%E4%BA%8B%E4%BB%B6%E5%90%8D%E5%A4%A7%E5%85%A8)
 
 ``` ts
-export const plugin = definePlugin({
-  pluginName: '测试插件',
-  install() {
+export const plugin = new Plugin('插件名')
+  .onInstall(({ event }) => {
     // 简单分为四大类, 具体每个端点可以通过endPoint选项来配置
-    this.regCommandEvent({})
-    this.regMessageEvent({})
-    this.regNoticeEvent({})
-    this.regRequestEvent({})
-  },
-  uninstall() {}
-})
+    event.regCommandEvent({})
+    event.regMessageEvent({})
+    event.regNoticeEvent({})
+    event.regRequestEvent({})
+  })
 ```
 
 其中每个具体函数的类型:
@@ -109,69 +94,100 @@ interface RequestEvent<T extends keyof RequestHandler = keyof RequestHandler> {
 
 ## 3.插件运行时上下文
 
-`definePlugin` 会在插件实例化时把若干运行时字段挂到 `this` 上，方便在 `install`/`uninstall` 阶段直接调用。
+这里的 `context` 是使用 `define` 函数设置的
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `atri` | `ATRI` | 框架实例，可主动安装/卸载其他插件。 |
-| `bot` | `ATRI['bot']` | 底层 `Bot` 对象，封装了事件注册与消息 API。 |
-| `ws` | `ATRI['bot']['ws']` | NapCat WebSocket 客户端，若需要直接发起原始 API，可使用此字段。 |
-| `config` | `TConfig` | 合并后的插件配置，默认读取/写入 `configDir/<pluginName>.json`。 |
-| `logger` | `Logger` | 已经带上插件名的日志实例。 |
-| `refreshConfig()` | `Promise<void>` | 重新从磁盘加载配置，热修改配置文件时使用。 |
-| `saveConfig(config?: TConfig)` | `Promise<void>` | 写回配置，若不传参则保存当前 `this.config`。 |
+`define` 函数支持基础类型和函数返回, 如果有需要还可以通过泛型指定类型
 
-这些字段同样可以借助 TypeScript 的类型推断获得自动补全，建议为插件定义独立的 Props/Config 接口，提升可维护性。
+``` ts
+export const plugin = new Plugin('上下文插件')
+  .define('hello', 'world')
+  .define('fn', () => 'aa')
+  .define('db', async () => {
+    return Promise.resolve('123')
+  })
+  .define('obj', (plugin) => {
+    // 当然还支持更高级的功能, 比如这里会接收到 所有的上下文, 插件名, 配置信息
+    return {
+      pluginName: plugin.pluginName,
+      hello: plugin.context.hello,
+    }
+  })
+  .onInstall(({ context }) => {
+    console.log(context)
+  })
+```
+
+``` ts
+export interface PluginRuntimeContext<TContext extends object, TConfig extends object> {
+  context: TContext
+  config: TConfig
+  defaultConfig: TConfig
+  pluginName: string
+
+  plugin: Plugin<TContext, TConfig>
+  atri: ATRI
+  bot: ATRI['bot']
+  ws: ATRI['bot']['ws']
+  logger: ATRI['logger']
+  refreshConfig: () => Promise<void>
+  saveConfig: (config?: TConfig) => Promise<void>
+
+  event: {
+    regMessageEvent: <K extends keyof MessageHandler>(event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => () => void
+    regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
+    regNoticeEvent: <K extends keyof NoticeHandler>(event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
+    regRequestEvent: <K extends keyof RequestHandler>(event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
+  }
+}
+```
 
 ## 4.管理插件配置
 
-当需要持久化用户配置时，提供 `defaultConfig` 即可让 ATRI 自动处理读写逻辑：
-如果配置文件在插件中动态被修改了, 那么只是在内存中, 如果需要保存到硬盘, 就需要手动调用 `saveConfig`
+使用 `setDefaultConfig` 来设置插件的默认配置文件, 如果本地的 `configDir` 下有对应插件的配置文件, 他就会自动去读取, 如果没有那就会使用 `defaultConfig` 去创建, 如果两个配置文件有重叠, 优先本地配置文件
 
-```ts
-interface CounterConfig {
-  maxTimes: number
+``` ts
+const config = {
+  ...defaultConfig,
+  ...localConfig
 }
-
-export const CounterPlugin = definePlugin<{ times: number }, CounterConfig>({
-  pluginName: 'counter',
-  defaultConfig: {
-    maxTimes: 3,
-  },
-  times: 0,
-  async install() {
-    this.logger.INFO(`当前配置: ${JSON.stringify(this.config)}`)
-
-    // 更新内存状态
-    this.times += 1
-
-    if (this.times > this.config.maxTimes) {
-      this.config.maxTimes = this.times
-      await this.saveConfig()
-    }
-  },
-  uninstall() {},
-})
 ```
 
-- `defaultConfig` 会与磁盘上的 JSON 合并，未提供的字段回落到默认值。
-- 若显式传入 `config`，ATRI 将不会自动读写磁盘，适合在测试环境中注入临时配置。
-- 通过 `this.refreshConfig()` 可以在不重启的情况下重新加载用户手动修改的配置。
+``` ts
+const plugin = new Plugin('bot')
+  .setDefaultConfig({
+    reply: 'pong'
+  })
+  .onInstall(({ config }) => {
+    console.log(config)
+  })
+```
 
 ## 5.Bot 工具方法
 
-`this.bot` 提供了常用的消息与用户工具，方便在插件内直接调用：
+`bot` 提供了常用的消息与用户工具，方便在插件内直接调用：
+
+::: tip
+`bot` 在使用 `onInstall` 注册的时候从上下文提取
+
+``` ts
+const plugin = new Plugin('bot')
+  .onInstall(({ bot }) => {
+    console.log(bot)
+  })
+```
+
+:::
 
 ```ts
-this.bot.sendMsg(context, [Structs.text('Hello, ATRI!')], { reply: false, at: false })
+bot.sendMsg(context, [Structs.text('Hello, ATRI!')], { reply: false, at: false })
 
-await this.bot.sendForwardMsg(
+await bot.sendForwardMsg(
   { message_type: 'group', group_id: context.group_id },
   [Structs.node(context.user_id, '日志', '多条消息...')],
 )
 
-const friend = await this.bot.isFriend({ user_id: context.user_id })
-const nickname = await this.bot.getUsername({ user_id: context.user_id, group_id: context.group_id })
+const friend = await bot.isFriend({ user_id: context.user_id })
+const nickname = await bot.getUsername({ user_id: context.user_id, group_id: context.group_id })
 ```
 
 - `sendMsg` 默认会自动引用并 @ 触发者，可通过第三个参数关闭。
@@ -182,84 +198,3 @@ const nickname = await this.bot.getUsername({ user_id: context.user_id, group_id
 ## 6.插件示例
 
 可参考 [ATRI Plugins](https://github.com/HkTeamX/ATRI/tree/main/plugins)
-
-``` ts
-import type { CommandContext } from '@atri-bot/core'
-import { definePlugin } from '@atri-bot/core'
-import { Structs } from 'node-napcat-ts'
-import yargs from 'yargs'
-import packageJson from '../package.json' with { type: 'json' }
-
-//               ↓ 定义插件上会增加的属性, 可以不加让ts自动推断
-export interface PingPluginProps {
-  pingCommander: typeof pingCommander
-  handlePingCommand: (context: CommandContext<'message', typeof pingCommander>) => Promise<void>
-}
-
-//               ↓ 定义插件的配置文件
-export interface PingPluginConfig {
-  defaultReply: string
-}
-
-//              ↓ 定义插件命令解析器
-const pingCommander = yargs()
-  //     ↓ 标准yargs使用方式, 定义--reply选项
-  .option('reply', {
-    // -r 缩写
-    alias: 'r',
-    // 字符串类型
-    type: 'string',
-    // 介绍
-    description: '自定义回复内容',
-    // 是否必选
-    demandOption: true,
-  })
-
-//                                     ↓ 先定义会增加的属性 再定义配置文件
-//                                       如果配置了需要增加的属性, 配置文件的类型会变成object, 请注意
-export const PingPlugin = definePlugin<PingPluginProps, PingPluginConfig>({
-  // 插件名
-  pluginName: packageJson.name,
-  // 定义默认配置文件
-  defaultConfig: {
-    defaultReply: 'pong',
-  },
-  // 插件被加载时运行的函数
-  install() {
-    // 注册一个命令事件
-    this.regCommandEvent({
-      // 触发器, 可以为正则表达式
-      trigger: 'ping',
-      // 命令解析器
-      commander: pingCommander,
-      // 回调           消息上下文  解析后的命令信息
-      callback: async ({ context, options }) => {
-        await this.bot.sendMsg(
-          context,
-          [Structs.text(options.reply ?? this.config.defaultReply)],
-          { reply: false, at: false },
-        )
-      },
-    })
-
-    this.regCommandEvent({
-      trigger: 'ping2',
-      commander: pingCommander,
-      // 另外分离的处理函数
-      callback: this.handlePingCommand.bind(this),
-    })
-  },
-  // 插件卸载
-  uninstall() {},
-  pingCommander,
-
-  // 独立处理函数           ↓ 这里可以不定义类型, 因为我们已经在 PingPluginProps 中定义好了类型
-  async handlePingCommand({ context, options }) {
-    await this.bot.sendMsg(
-      context,
-      [Structs.text(options.reply ?? this.config.defaultReply)],
-      { reply: false, at: false },
-    )
-  },
-})
-```
