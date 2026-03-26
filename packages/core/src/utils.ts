@@ -28,3 +28,7 @@ export function decodeUnicode(raw: string): string {
     return String.fromCharCode(Number.parseInt(p1, 16))
   })
 }
+
+export function normalizePluginName(pluginName: string) {
+  return pluginName.replaceAll('/', '__')
+}
