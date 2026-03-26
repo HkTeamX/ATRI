@@ -2,7 +2,7 @@ import type { LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
 import type { Plugin } from './plugin.js'
 import path from 'node:path'
-import { defaultTransformer, Logger, saveFileTransformer } from '@huan_kong/logger'
+import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan_kong/logger'
 import fs from 'fs-extra'
 import PackageJson from '../package.json' with { type: 'json' }
 import { Bot } from './bot.js'
@@ -93,8 +93,33 @@ export class ATRI {
   }
 
   async installPlugin(packageName: string) {
-    const fullPath = import.meta.resolve(packageName, `file://${this.config.modulesDir}/`)
-    const pluginModule = await import(fullPath) as { plugin: Plugin<any, any> }
+    const importPaths = [
+      packageName,
+      path.posix.join(packageName, 'src/index.js'),
+    ]
+
+    if ((this.config.logLevel ?? LogLevel.INFO) <= LogLevel.DEBUG) {
+      importPaths.reverse()
+    }
+
+    let pluginModule: { plugin: Plugin<any, any> }
+    try {
+      pluginModule = await import(
+        import.meta.resolve(importPaths[0], `file://${this.config.modulesDir}/`),
+      ) as { plugin: Plugin<any, any> }
+    }
+    catch {
+      try {
+        pluginModule = await import(
+          import.meta.resolve(importPaths[1], `file://${this.config.modulesDir}/`),
+        ) as { plugin: Plugin<any, any> }
+      }
+      catch (error) {
+        this.logger.ERROR(`插件 ${packageName} 加载失败:`, error)
+        return
+      }
+    }
+
     if (!('plugin' in pluginModule)) {
       this.logger.ERROR(`插件 ${packageName} 未导出 plugin`)
       return
