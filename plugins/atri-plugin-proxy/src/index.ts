@@ -1,4 +1,4 @@
-import { definePlugin } from '@atri-bot/core'
+import { Plugin } from '@atri-bot/core'
 import proxy from '@huan_kong/node-global-proxy'
 import PackageJson from '../package.json' with { type: 'json' }
 
@@ -12,25 +12,23 @@ export type ProxyConfig
       }
     }
 
-export const Plugin = definePlugin<object, ProxyConfig>({
-  pluginName: PackageJson.name,
-  defaultConfig: {
+export const plugin = new Plugin(PackageJson.name)
+  .setDefaultConfig<ProxyConfig>({
     enable: false,
-  },
-  install() {
-    if (!this.config.enable) {
+  })
+  .onInstall(({ config }) => {
+    if (!config.enable) {
       return
     }
 
-    if (!this.config.proxy?.http || !this.config.proxy?.https) {
-      this.logger.ERROR('代理配置不完整，请检查配置项 proxy.http 和 proxy.https 是否正确')
+    if (!config.proxy?.http || !config.proxy?.https) {
+      console.error('代理配置不完整，请检查配置项 proxy.http 和 proxy.https 是否正确')
       return
     }
 
-    proxy.setConfig(this.config.proxy)
+    proxy.setConfig(config.proxy)
     proxy.start()
-  },
-  uninstall() {
+  })
+  .onUninstall(() => {
     proxy.stop()
-  },
-})
+  })

@@ -139,10 +139,12 @@ export class Bot {
       const isAdmin = this.config.adminId.includes(context.user_id)
       const isReply = context.message[0].type === 'reply'
 
-      this.logger.DEBUG('收到消息:', context)
       if (this.config.logLevel === LogLevel.DEBUG && !isAdmin) {
         this.logger.DEBUG('当前处于调试模式, 非管理员消息, 已跳过处理流程:', context)
         return
+      }
+      else {
+        this.logger.DEBUG('收到消息:', context)
       }
 
       for (const event of this.events.message) {
@@ -206,7 +208,7 @@ export class Bot {
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
-            return
+            break
           }
         }
         catch (error) {
@@ -240,7 +242,7 @@ export class Bot {
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
-            return
+            break
           }
         }
         catch (error) {
@@ -275,7 +277,7 @@ export class Bot {
 
           if (result === 'quit') {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
-            return
+            break
           }
         }
         catch (error) {

@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/plugin-proxy",
   "type": "module",
-  "version": "2.0.3",
+  "version": "2.2.0",
   "description": "proxy plugin for atri framework",
   "author": "huan_kong",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@atri-bot/core": "^2.0.7",
+    "@atri-bot/core": "^2.2.0",
     "@huan_kong/node-global-proxy": "^1.0.2"
   }
 }

@@ -1,93 +1,201 @@
-import type { Logger } from '@huan_kong/logger'
-import type { AnyRelations } from 'drizzle-orm'
 import type { MessageHandler, NoticeHandler, RequestHandler } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
 import type { ATRI } from './atri.js'
 import type { CommandEvent, MessageEvent, NoticeEvent, RequestEvent } from './bot.js'
-import type { DBAddOptions } from './db.js'
 import type { MaybePromise } from './utils.js'
-import path from 'node:path'
-import { normalizePluginName } from './utils.js'
 
-export interface PluginRuntime<TExtraFields extends object, TConfig extends object> {
+export const buildStatus = {
+  pending: 'pending',
+  built: 'built',
+} as const
+
+export type BuildStatus = typeof buildStatus[keyof typeof buildStatus]
+
+export interface PluginRuntimeContext<TContext extends object, TConfig extends object> {
+  context: TContext
+  config: TConfig
+  defaultConfig: TConfig
+  pluginName: string
+
+  plugin: Plugin<TContext, TConfig>
   atri: ATRI
   bot: ATRI['bot']
   ws: ATRI['bot']['ws']
-  db: ATRI['db']
-  cron: ATRI['cron']
-  request: ATRI['request']
-
-  dataDir: string
-  config: TConfig
-  logger: Logger
+  logger: ATRI['logger']
   refreshConfig: () => Promise<void>
   saveConfig: (config?: TConfig) => Promise<void>
 
-  regMessageEvent: <K extends keyof MessageHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => () => void
-  regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(this: Plugin<TExtraFields, TConfig>, event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
-  regNoticeEvent: <K extends keyof NoticeHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
-  regRequestEvent: <K extends keyof RequestHandler>(this: Plugin<TExtraFields, TConfig>, event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
+  event: {
+    regMessageEvent: <K extends keyof MessageHandler>(event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => () => void
+    regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
+    regNoticeEvent: <K extends keyof NoticeHandler>(event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
+    regRequestEvent: <K extends keyof RequestHandler>(event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
+  }
 }
 
-export interface PluginBaseOptions<TConfig extends object> {
-  defaultConfig?: TConfig
-  config?: TConfig
+export type PluginOnFn<TContext extends object, TConfig extends object> = (context: PluginRuntimeContext<TContext, TConfig>) => MaybePromise<void>
+
+export interface PluginDefineContext<TContext extends object, TConfig extends object> {
+  context: TContext
+  config: TConfig
   pluginName: string
-  install: () => MaybePromise<void>
-  uninstall: () => MaybePromise<void>
 }
 
-export type PluginOptions<TExtraFields extends object, TConfig extends object>
-  = TExtraFields
-    & PluginBaseOptions<TConfig>
-    & ThisType<Plugin<TExtraFields, TConfig>>
+export class Plugin<TContext extends object, TConfig extends object> {
+  private pluginName: string
+  private context: TContext = {} as TContext
+  private setupTasks: Array<() => Promise<void>> = []
+  private buildStatus: BuildStatus = buildStatus.pending
+  private installed = false
+  private installFn: PluginOnFn<TContext, TConfig> = () => {}
+  private uninstallFn: PluginOnFn<TContext, TConfig> = () => {}
+  private defaultConfig: TConfig = {} as TConfig
+  private config: TConfig = {} as TConfig
+  private atri!: ATRI
+  private bot!: ATRI['bot']
+  private logger!: ATRI['logger']
+  private ws!: ATRI['bot']['ws']
 
-export type Plugin<TExtraFields extends object, TConfig extends object>
-  = PluginRuntime<TExtraFields, TConfig>
-    & PluginOptions<TExtraFields, TConfig>
+  constructor(pluginName: string) {
+    this.pluginName = pluginName
+  }
 
-export type definePluginReturnType<TExtraFields extends object, TConfig extends object> = (atri: ATRI) => Promise<Plugin<TExtraFields, TConfig>>
+  define<V extends object | string | number, K extends string = string>(
+    key: K,
+    value: V | ((plugin: PluginDefineContext<TContext, TConfig>) => MaybePromise<V>),
+  ): Plugin<TContext & Record<K, V>, TConfig> {
+    this.buildStatus = buildStatus.pending
 
-export function definePlugin<TExtraFields extends object = object, TConfig extends object = object, TRealExtraFields extends object = Omit<TExtraFields, keyof PluginBaseOptions<TConfig>>>(pluginOptions: PluginOptions<TRealExtraFields, TConfig>): definePluginReturnType<TRealExtraFields, TConfig>
-export function definePlugin<TExtraFields extends object = object, TConfig extends object = object, TRealExtraFields extends object = Omit<TExtraFields, keyof PluginBaseOptions<TConfig>>>(pluginOptions: () => MaybePromise<PluginOptions<TRealExtraFields, TConfig>>): definePluginReturnType<TRealExtraFields, TConfig>
-export function definePlugin<TExtraFields extends object = object, TConfig extends object = object, TRealExtraFields extends object = Omit<TExtraFields, keyof PluginBaseOptions<TConfig>>>(pluginOptions: PluginOptions<TRealExtraFields, TConfig> | (() => MaybePromise<PluginOptions<TRealExtraFields, TConfig>>)): definePluginReturnType<TRealExtraFields, TConfig> {
-  return async (atri: ATRI) => {
-    const computedPluginOptions = await Promise.resolve(typeof pluginOptions === 'function' ? pluginOptions() : pluginOptions)
+    this.setupTasks.push(async () => {
+      const resolved = typeof value === 'function'
+        ? await value({
+            context: this.context,
+            config: this.config,
+            pluginName: this.pluginName,
+          })
+        : value
 
-    const plugin: Plugin<TRealExtraFields, TConfig> = {
-      ...computedPluginOptions,
+      ;(this.context as any)[key] = resolved
+    })
 
-      atri,
-      bot: atri.bot,
-      ws: atri.bot.ws,
-      db: atri.db,
-      cron: atri.cron,
-      request: atri.request,
-      dataDir: path.join(atri.config.dataDir, normalizePluginName(computedPluginOptions.pluginName)),
-      config: computedPluginOptions.config ?? await atri.loadConfig<TConfig>(computedPluginOptions.pluginName, computedPluginOptions.defaultConfig),
-      logger: atri.logger.clone({ title: computedPluginOptions.pluginName }),
-      refreshConfig: async () => {
-        if (computedPluginOptions.config)
-          return
-        plugin.config = await atri.loadConfig<TConfig>(computedPluginOptions.pluginName, computedPluginOptions.defaultConfig)
-      },
-      saveConfig: async (config?: TConfig) => {
-        if (computedPluginOptions.config)
-          return
-        await atri.saveConfig<TConfig>(computedPluginOptions.pluginName, config ?? plugin.config)
-      },
-      regMessageEvent: event => atri.bot.regMessageEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
-      regCommandEvent: event => atri.bot.regCommandEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
-      regNoticeEvent: event => atri.bot.regNoticeEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
-      regRequestEvent: event => atri.bot.regRequestEvent({ ...event, pluginName: computedPluginOptions.pluginName }),
-      addDb: <TSchema extends Record<string, unknown>, TRelations extends AnyRelations>(options: Omit<DBAddOptions<TSchema, TRelations>, 'pluginName'>) => {
-        return atri.db.add({
-          ...options,
-          pluginName: computedPluginOptions.pluginName,
-        })
-      },
+    return this as any
+  }
+
+  async build(): Promise<this> {
+    if (this.buildStatus === buildStatus.built) {
+      return this
     }
 
-    return plugin
+    while (this.setupTasks.length > 0) {
+      const task = this.setupTasks.shift()
+      if (task) {
+        await task()
+      }
+    }
+
+    this.buildStatus = buildStatus.built
+
+    return this
+  }
+
+  setDefaultConfig<Config extends TConfig>(config: Config): Plugin<TContext, Config> {
+    this.defaultConfig = config
+    return this as unknown as Plugin<TContext, Config>
+  }
+
+  setConfig(config: TConfig) {
+    this.config = config
+    return this
+  }
+
+  onInstall(fn: PluginOnFn<TContext, TConfig>) {
+    this.installFn = fn
+    return this
+  }
+
+  onUninstall(fn: PluginOnFn<TContext, TConfig>) {
+    this.uninstallFn = fn
+    return this
+  }
+
+  private async emit(fn: PluginOnFn<TContext, TConfig>) {
+    await fn({
+      plugin: this,
+      pluginName: this.pluginName,
+      config: this.config,
+      defaultConfig: this.defaultConfig,
+      context: this.context,
+      atri: this.atri,
+      bot: this.bot,
+      ws: this.ws,
+      logger: this.logger,
+      refreshConfig: async () => { this.config = await this.atri.loadConfig(this.pluginName, this.defaultConfig) },
+      saveConfig: async (config) => { await this.atri.saveConfig(this.pluginName, config ?? this.config) },
+
+      event: {
+        regMessageEvent: (event) => {
+          return this.bot.regMessageEvent({
+            ...event,
+            pluginName: this.pluginName,
+          })
+        },
+        regCommandEvent: (event) => {
+          return this.bot.regCommandEvent({
+            ...event,
+            pluginName: this.pluginName,
+          })
+        },
+        regNoticeEvent: (event) => {
+          return this.bot.regNoticeEvent({
+            ...event,
+            pluginName: this.pluginName,
+          })
+        },
+        regRequestEvent: (event) => {
+          return this.bot.regRequestEvent({
+            ...event,
+            pluginName: this.pluginName,
+          })
+        },
+      },
+    })
+  }
+
+  async emitInstall(atri: ATRI) {
+    if (this.installed) {
+      return
+    }
+
+    this.atri = atri
+    this.bot = atri.bot
+    this.logger = atri.logger.clone({
+      title: this.pluginName,
+    })
+    this.ws = atri.bot.ws
+    this.config = await atri.loadConfig(this.pluginName, this.defaultConfig)
+
+    await this.emit(this.installFn)
+
+    this.installed = true
+    return this
+  }
+
+  async emitUninstall() {
+    if (!this.installed) {
+      return
+    }
+
+    await this.emit(this.uninstallFn)
+
+    this.installed = false
+    return this
+  }
+
+  getPluginName(): string {
+    return this.pluginName
+  }
+
+  getBuildStatus(): BuildStatus {
+    return this.buildStatus
   }
 }

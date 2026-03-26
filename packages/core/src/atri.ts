@@ -1,42 +1,26 @@
 import type { LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
-import type { CronConfig } from './cron.js'
-import type { DBConfig } from './db.js'
-import type { definePluginReturnType, Plugin } from './plugin.js'
-import type { RequestConfig } from './request.js'
+import type { Plugin } from './plugin.js'
 import path from 'node:path'
-import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan_kong/logger'
+import { defaultTransformer, Logger, saveFileTransformer } from '@huan_kong/logger'
 import fs from 'fs-extra'
 import PackageJson from '../package.json' with { type: 'json' }
 import { Bot } from './bot.js'
-import { Cron } from './cron.js'
-import { DB } from './db.js'
-import { Request } from './request.js'
 import { normalizePluginName } from './utils.js'
 
 export interface ATRIConfig {
   logLevel?: LogLevelType
+
   configDir: string
   logDir: string
   dataDir: string
-  saveLogs: boolean
   modulesDir: string
-  maxFiles?: number
-  disableATRIFlag?: boolean
-  plugins?: string[]
-
   botConfig: BotConfig
-  cronConfig: CronConfig
-  requestConfig: RequestConfig
-  dbConfig: DBConfig
-}
 
-export interface InstallPluginOptions {
-  modulesDir?: string
-}
+  saveLogs: boolean
+  maxFiles?: number
 
-export interface ATRIPluginModule {
-  Plugin?: definePluginReturnType<object, object>
+  disableATRIFlag?: boolean
 }
 
 export class ATRI {
@@ -44,12 +28,9 @@ export class ATRI {
   config: ATRIConfig
   logger: Logger
   bot: Bot
-  cron: Cron
-  request: Request
-  db: DB
 
-  plugins: { [key: string]: Plugin<any, any> } = {}
-  configs: { [key: string]: any } = {}
+  plugins: Record<string, Plugin<any, any>> = {}
+  configs: Record<string, any> = {}
 
   private async removeUselessLogs() {
     const files = await Array.fromAsync(fs.promises.glob(`${this.config.logDir}/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log`))
@@ -90,21 +71,7 @@ export class ATRI {
       logLevel: config.logLevel,
       ...config.botConfig,
     })
-    this.cron = new Cron(this, {
-      logLevel: config.logLevel,
-      ...config.cronConfig,
-    })
-    this.request = new Request(this, {
-      logLevel: config.logLevel,
-      ...config.requestConfig,
-    })
-    this.db = new DB(this, {
-      logLevel: config.logLevel,
-      ...config.dbConfig,
-    })
-  }
 
-  async init() {
     if (!this.config.disableATRIFlag) {
       console.log('\x1Bc')
       console.log(
@@ -118,88 +85,69 @@ export class ATRI {
       )
       this.logger.INFO(`アトリは、高性能ですから！`)
     }
+  }
 
+  async init() {
     await this.bot.init()
-
-    for (const plugin of this.config.plugins ?? []) {
-      await this.installPlugin(plugin)
-    }
-
     this.logger.INFO(`ATRI 初始化完成`)
   }
 
-  async _importPlugin(modulesDir: string, importPath: string) {
-    const pluginPath = import.meta.resolve(importPath, `file://${modulesDir}`)
-    return await import(pluginPath) as ATRIPluginModule
+  async installPlugin(packageName: string) {
+    const fullPath = import.meta.resolve(packageName, `file://${this.config.modulesDir}/`)
+    const pluginModule = await import(fullPath) as { plugin: Plugin<any, any> }
+    if (!('plugin' in pluginModule)) {
+      this.logger.ERROR(`插件 ${packageName} 未导出 plugin`)
+      return
+    }
+
+    return this.installPluginByInstance(pluginModule.plugin)
   }
 
-  async installPlugin(packageName: string, options: InstallPluginOptions = {}) {
-    const importPath = [packageName, path.posix.join(packageName, './src/index.js')]
-    if (this.config.logLevel === LogLevel.DEBUG) {
-      importPath.reverse()
+  async installPluginByInstance<TContext extends object, TConfig extends object>(plugin: Plugin<TContext, TConfig>) {
+    const name = plugin.getPluginName()
+    if (this.plugins[name]) {
+      this.logger.WARN(`插件 ${name} 已经安装，跳过安装`)
+      return this.plugins[name] as Plugin<TContext, TConfig>
     }
 
-    // 开始加载
-    let pluginModule: ATRIPluginModule
     try {
-      pluginModule = await this._importPlugin(options.modulesDir ?? this.config.modulesDir, importPath[0])
+      await plugin.build()
     }
-    catch {
-      // 如果加载失败，且处于调试模式，尝试使用另一个路径加载
-      try {
-        pluginModule = await this._importPlugin(options.modulesDir ?? this.config.modulesDir, importPath[1])
-      }
-      catch (error) {
-        this.logger.ERROR(`插件 ${packageName} 加载失败:`, String(error))
-        return
-      }
-    }
-
-    const Plugin = pluginModule.Plugin
-
-    if (!Plugin) {
-      this.logger.ERROR(`插件 ${packageName} 加载失败: 没有找到 Plugin 导出`)
+    catch (error) {
+      this.logger.ERROR(`插件 ${name} 构建失败:`, error)
       return
     }
 
-    const pluginInstance = await Plugin(this)
-    if (pluginInstance.pluginName in this.plugins) {
-      this.logger.WARN(`插件 ${pluginInstance.pluginName} 已经安装，跳过本次安装`)
+    try {
+      await plugin.emitInstall(this)
+      this.logger.INFO(`插件 ${name} 安装完成`)
+    }
+    catch (error) {
+      this.logger.ERROR(`插件 ${name} 安装失败:`, error)
       return
     }
 
-    if (!('install' in pluginInstance)) {
-      this.logger.ERROR(`插件 ${packageName} 加载失败: Plugin 导出类型不正确`)
-      return
-    }
+    this.plugins[name] = plugin
 
-    await pluginInstance.install()
-    this.plugins[pluginInstance.pluginName] = pluginInstance
-    this.logger.INFO(`插件 ${pluginInstance.pluginName} 安装成功`)
-
-    return pluginInstance
+    return plugin
   }
 
   async uninstallPlugin(pluginName: string) {
     const plugin = this.plugins[pluginName]
     if (!plugin) {
-      this.logger.WARN(`插件 ${pluginName} 未找到，无法卸载`)
+      this.logger.WARN(`插件 ${pluginName} 未安装，无法卸载`)
       return
     }
 
-    const unloaders = this.bot.unloaders[pluginName] ?? []
-    for (const unload of unloaders) {
-      unload()
-    }
-    this.bot.unloaders[pluginName] = []
-
-    await plugin.uninstall()
+    await this.plugins[pluginName].emitUninstall()
     delete this.plugins[pluginName]
-    this.logger.INFO(`插件 ${pluginName} 卸载成功`)
+    delete this.configs[pluginName]
+    this.logger.INFO(`插件 ${pluginName} 已卸载`)
   }
 
   async loadConfig<T extends object>(pluginName: string, defaultConfig?: T, refresh = false): Promise<T> {
-    if (!defaultConfig) {
+    if (!defaultConfig
+      || (typeof defaultConfig === 'object' && Object.keys(defaultConfig).length === 0)) {
       return {} as T
     }
 
@@ -237,6 +185,11 @@ export class ATRI {
 
     const configPath = path.join(this.config.configDir, `${pluginName}.json`)
     await fs.writeJSON(configPath, config, { spaces: 2 })
+
+    if (!this.configs[pluginName]) {
+      this.configs[pluginName] = config
+      return
+    }
 
     // 保留引用
     Object.assign(this.configs[pluginName], config)
