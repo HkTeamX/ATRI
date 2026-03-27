@@ -1,8 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "lint": "bun run --filter './{packages,plugins}/*' --filter '[lint]' lint",
-    "typecheck": "bun run --filter './{packages,plugins}/*' --filter '[typecheck]' typecheck",
+    "lint": "bun run --filter './{packages,plugins,libs}/*' --filter '[lint]' lint",
+    "typecheck": "bun run --filter './{packages,plugins,libs}/*' --filter '[typecheck]' typecheck",
     "clean": "rm -rf node_modules && bun install"
   },
   "devDependencies": {
@@ -10,11 +10,12 @@
     "@types/bun": "^1.3.11",
     "eslint": "^10.1.0",
     "jiti": "^2.6.1",
-    "tsdown": "^0.21.4",
-    "typescript": "^5.9.3"
+    "tsdown": "^0.21.6",
+    "typescript": "^6.0.2"
   },
   "workspaces": [
     "packages/*",
-    "plugins/*"
+    "plugins/*",
+    "libs/*"
   ]
 }
