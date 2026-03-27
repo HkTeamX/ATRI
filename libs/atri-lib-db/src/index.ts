@@ -12,9 +12,9 @@ export interface InitDbPluginOptions {
   config?: DrizzleConfig
 }
 
-export async function InitDb(atri: ATRI, options: InitDbPluginOptions) {
+export async function initDb(atri: ATRI, options: InitDbPluginOptions) {
   const logger = atri.logger.clone({
-    title: 'DBPlugin-Init',
+    title: 'DbPlugin-init',
   })
 
   try {
@@ -34,16 +34,16 @@ export interface DbPluginOptions<TSchema extends Record<string, unknown>, TRelat
   migration?: MigrationConfig
 }
 
-export async function DbPlugin<
+export async function useDb<
   TSchema extends Record<string, unknown>,
   TRelations extends AnyRelations = EmptyRelations,
 >(atri: ATRI, options: DbPluginOptions<TSchema, TRelations>) {
   if (!initDbPluginOptions) {
-    throw new Error('请先通过 InitDbPlugin 插件初始化数据库连接')
+    throw new Error('请先通过 initDb 初始化数据库连接')
   }
 
   const logger = atri.logger.clone({
-    title: 'DBPlugin',
+    title: 'DbPlugin',
   })
 
   const Drizzle = drizzle(
