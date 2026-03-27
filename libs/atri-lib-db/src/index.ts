@@ -5,6 +5,16 @@ import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/bun-sql'
 import { migrate } from 'drizzle-orm/bun-sql/migrator'
 
+import { timestamp } from 'drizzle-orm/pg-core'
+
+export const timestamps = {
+  created_at: timestamp().notNull().defaultNow(),
+  updated_at: timestamp()
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+}
+
 let initDbPluginOptions: InitDbPluginOptions | null = null
 
 export interface InitDbPluginOptions {
