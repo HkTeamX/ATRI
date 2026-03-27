@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/lib-db",
   "type": "module",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "db lib for atri framework",
   "author": "huan_kong",
   "license": "MIT",
@@ -16,9 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
+    "@atri-bot/core": "^2.2.7",
     "drizzle-orm": "^1.0.0-beta.20"
-  },
-  "devDependencies": {
-    "@atri-bot/core": "^2.2.7"
   }
 }

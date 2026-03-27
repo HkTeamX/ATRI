@@ -55,8 +55,8 @@ export function useCron(atri: ATRI) {
     getCronJob(name: string): CronJob | null {
       return cronJobs[name] || null
     },
-    getCronJobs(): Record<string, CronJob> {
-      return cronJobs
+    getCronJobs(): Readonly<Record<string, CronJob>> {
+      return Object.freeze({ ...cronJobs })
     },
   }
 }
