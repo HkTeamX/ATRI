@@ -2,18 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"],
-      "@atri-bot/core": ["../core/src/index.ts"],
-      "@atri-bot/plugin-ping": ["../../plugins/atri-plugin-ping/src/index.ts"],
-      "@atri-bot/plugin-proxy": ["../../plugins/atri-plugin-proxy/src/index.ts"],
-      "@atri-bot/plugin-the-cake-is-a-lie": ["../../plugins/atri-plugin-the-cake-is-a-lie/src/index.ts"],
-      "@atri-bot/plugin-help": ["../../plugins/atri-plugin-help/src/index.ts"],
-      "@atri-bot/lib-db": ["../../plugins/atri-lib-db/src/index.ts"]
-    },
-    "allowImportingTsExtensions": true,
-    "declaration": false,
-    "noEmit": true,
-    "outDir": "out"
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src"]
 }
