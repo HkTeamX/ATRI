@@ -40,6 +40,7 @@ export async function initDb(atri: ATRI, options: InitDbPluginOptions) {
 }
 
 export interface DbPluginOptions<TSchema extends Record<string, unknown>, TRelations extends AnyRelations> {
+  pluginName: string
   config: DrizzleConfig<TSchema, TRelations>
   migration?: MigrationConfig
 }
@@ -66,7 +67,10 @@ export async function useDb<
   )
 
   if (options.migration) {
-    await migrate(Drizzle, options.migration)
+    await migrate(Drizzle, {
+      ...options.migration,
+      migrationsTable: `drizzle_migrations_${options.pluginName}`,
+    })
   }
 
   return Drizzle
