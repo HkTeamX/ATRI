@@ -1,0 +1,34 @@
+{
+  "name": "@atri-bot/lib-db",
+  "type": "module",
+  "version": "2.2.7",
+  "description": "QQBOT TypeScript framework",
+  "author": "huankong233",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HkTeamX/ATRI.git"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "./dist/**/*"
+  ],
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
+  },
+  "dependencies": {
+    "@huan_kong/logger": "^2.0.2",
+    "cron": "^4.4.0",
+    "fs-extra": "^11.3.4",
+    "node-napcat-ts": "^0.4.24",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/yargs": "^17.0.35"
+  }
+}

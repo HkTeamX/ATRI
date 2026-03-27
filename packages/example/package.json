@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@atri-bot/core": "workspace:*",
+    "@atri-bot/lib-request": "workspace:*",
     "@atri-bot/plugin-help": "workspace:*",
     "@atri-bot/plugin-ping": "workspace:*",
     "@atri-bot/plugin-proxy": "workspace:*",

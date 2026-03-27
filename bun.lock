@@ -12,9 +12,49 @@
         "typescript": "^5.9.3",
       },
     },
+    "libs/atri-lib-cron": {
+      "name": "@atri-bot/lib-cron",
+      "version": "2.2.7",
+      "dependencies": {
+        "@huan_kong/logger": "^2.0.2",
+        "cron": "^4.4.0",
+        "fs-extra": "^11.3.4",
+        "node-napcat-ts": "^0.4.24",
+        "yargs": "^18.0.0",
+      },
+      "devDependencies": {
+        "@types/fs-extra": "^11.0.4",
+        "@types/yargs": "^17.0.35",
+      },
+    },
+    "libs/atri-lib-db": {
+      "name": "@atri-bot/lib-db",
+      "version": "2.2.7",
+      "dependencies": {
+        "@huan_kong/logger": "^2.0.2",
+        "cron": "^4.4.0",
+        "fs-extra": "^11.3.4",
+        "node-napcat-ts": "^0.4.24",
+        "yargs": "^18.0.0",
+      },
+      "devDependencies": {
+        "@types/fs-extra": "^11.0.4",
+        "@types/yargs": "^17.0.35",
+      },
+    },
+    "libs/atri-lib-request": {
+      "name": "@atri-bot/lib-request",
+      "version": "2.1.0",
+      "dependencies": {
+        "ky": "^1.14.3",
+      },
+      "devDependencies": {
+        "@atri-bot/core": "^2.2.7",
+      },
+    },
     "packages/core": {
       "name": "@atri-bot/core",
-      "version": "2.2.0",
+      "version": "2.2.7",
       "dependencies": {
         "@huan_kong/logger": "^2.0.2",
         "cron": "^4.4.0",
@@ -38,6 +78,7 @@
       "name": "@atri-bot/example",
       "dependencies": {
         "@atri-bot/core": "workspace:*",
+        "@atri-bot/lib-request": "workspace:*",
         "@atri-bot/plugin-help": "workspace:*",
         "@atri-bot/plugin-ping": "workspace:*",
         "@atri-bot/plugin-proxy": "workspace:*",
@@ -53,14 +94,14 @@
     },
     "plugins/atri-plugin-help": {
       "name": "@atri-bot/plugin-help",
-      "version": "2.0.4",
+      "version": "2.2.2",
       "dependencies": {
-        "@atri-bot/core": "latest",
-        "node-napcat-ts": "latest",
-        "yargs": "latest",
+        "@atri-bot/core": "^2.2.0",
+        "node-napcat-ts": "^0.4.24",
+        "yargs": "^18.0.0",
       },
       "devDependencies": {
-        "@types/yargs": "latest",
+        "@types/yargs": "^17.0.35",
       },
     },
     "plugins/atri-plugin-ping": {
@@ -142,6 +183,12 @@
     "@atri-bot/docs": ["@atri-bot/docs@workspace:packages/docs"],
 
     "@atri-bot/example": ["@atri-bot/example@workspace:packages/example"],
+
+    "@atri-bot/lib-cron": ["@atri-bot/lib-cron@workspace:libs/atri-lib-cron"],
+
+    "@atri-bot/lib-db": ["@atri-bot/lib-db@workspace:libs/atri-lib-db"],
+
+    "@atri-bot/lib-request": ["@atri-bot/lib-request@workspace:libs/atri-lib-request"],
 
     "@atri-bot/plugin-help": ["@atri-bot/plugin-help@workspace:plugins/atri-plugin-help"],
 
@@ -853,6 +900,8 @@
 
     "keyv": ["keyv@4.5.4", "", { "dependencies": { "json-buffer": "3.0.1" } }, "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw=="],
 
+    "ky": ["ky@1.14.3", "", {}, "sha512-9zy9lkjac+TR1c2tG+mkNSVlyOpInnWdSMiue4F+kq8TwJSgv6o8jhLRg8Ho6SnZ9wOYUq/yozts9qQCfk7bIw=="],
+
     "levn": ["levn@0.4.1", "", { "dependencies": { "prelude-ls": "^1.2.1", "type-check": "~0.4.0" } }, "sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ=="],
 
     "local-pkg": ["local-pkg@1.1.2", "", { "dependencies": { "mlly": "^1.7.4", "pkg-types": "^2.3.0", "quansync": "^0.2.11" } }, "sha512-arhlxbFRmoQHl33a0Zkle/YWlmNwoyt6QNZEIJcqNbdrsix5Lvc4HyyI3EnwxTYlZYc32EbYrQ8SzEZ7dqgg9A=="],
@@ -1238,8 +1287,6 @@
     "yocto-queue": ["yocto-queue@0.1.0", "", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
-
-    "@atri-bot/plugin-help/@atri-bot/core": ["@atri-bot/core@2.2.0", "", { "dependencies": { "@huan_kong/logger": "^2.0.2", "cron": "^4.4.0", "fs-extra": "^11.3.4", "node-napcat-ts": "^0.4.24", "yargs": "^18.0.0" } }, "sha512-m8yRGB7+7hHvM88Z0pBqh4i3m/nx+wR7rQ3eGi9MYHuC+GxBxNe1QiHXvjXRBLRAZiF6JOlZ8fdXrOZC5DEzvQ=="],
 
     "@babel/types/@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@8.0.0-rc.2", "", {}, "sha512-xExUBkuXWJjVuIbO7z6q7/BA9bgfJDEhVL0ggrggLMbg0IzCUWGT1hZGE8qUH7Il7/RD/a6cZ3AAFrrlp1LF/A=="],
 
