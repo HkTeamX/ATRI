@@ -3,7 +3,7 @@ import { CronJob } from 'cron'
 
 export const cronJobs: Record<string, CronJob> = {}
 
-export type AddCronOptions = Parameters<typeof CronJob.from>[0] & { name: string, onTick: () => Promise<void> | void }
+export type AddCronOptions = Parameters<typeof CronJob.from>[0] & { name: string, onTick: () => Promise<void> | void, cronTime: string }
 
 export function useCron(atri: ATRI) {
   const logger = atri.logger.clone({
@@ -13,7 +13,11 @@ export function useCron(atri: ATRI) {
   return {
     addCronJob(options: AddCronOptions): [false, string] | [true, CronJob] {
       if (cronJobs[options.name]) {
-        return [false, 'name already exists']
+        return [false, '任务名已存在']
+      }
+
+      if (options.cronTime.split(' ').length !== 6) {
+        return [false, 'cronTime 格式错误，应为 6 个字段的 cron 表达式']
       }
 
       // 默认启动任务
@@ -47,6 +51,12 @@ export function useCron(atri: ATRI) {
       job.stop()
       delete cronJobs[name]
       return true
+    },
+    getCronJob(name: string): CronJob | null {
+      return cronJobs[name] || null
+    },
+    getCronJobs(): Record<string, CronJob> {
+      return cronJobs
     },
   }
 }
