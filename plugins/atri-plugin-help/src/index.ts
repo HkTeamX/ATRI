@@ -28,7 +28,7 @@ export const helpRegexp = /help|帮助/
 export async function handleFindCommand(commandEvents: CommandEvent[], command: string) {
   const matchedCommand = commandEvents.find((cmd) => {
     if (typeof cmd.trigger === 'string') {
-      return cmd.trigger.startsWith(command)
+      return cmd.trigger === command
     }
     else {
       return cmd.trigger.test(command)
@@ -68,17 +68,20 @@ export const plugin = new Plugin(PackageJson.name)
     event.regCommandEvent({
       trigger: helpRegexp,
       commander: helpCommander,
+      priority: 9999,
       callback: async ({ context, options }) => {
         const { page, size, command } = options
 
         if (command) {
           const msg = await handleFindCommand(bot.events.command, command)
           await bot.sendMsg(context, msg)
-          return
+          return 'quit' as const
         }
 
         const msg = await handleCommandList(bot.events.command, page, size, atri.version, bot.config.prefix[0])
         await bot.sendMsg(context, msg)
+
+        return 'quit' as const
       },
     })
   })

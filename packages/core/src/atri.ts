@@ -89,6 +89,7 @@ export class ATRI {
 
   async init() {
     await this.bot.init()
+
     this.logger.INFO(`ATRI 初始化完成`)
   }
 
@@ -105,17 +106,17 @@ export class ATRI {
     let pluginModule: { plugin: Plugin<any, any> }
     try {
       pluginModule = await import(
-        import.meta.resolve(importPaths[0], `file://${this.config.modulesDir}/`),
+        import.meta.resolve(importPaths[0], `file://${this.config.modulesDir}`),
       ) as { plugin: Plugin<any, any> }
     }
     catch {
       try {
         pluginModule = await import(
-          import.meta.resolve(importPaths[1], `file://${this.config.modulesDir}/`),
+          import.meta.resolve(importPaths[1], `file://${this.config.modulesDir}`),
         ) as { plugin: Plugin<any, any> }
       }
       catch (error) {
-        this.logger.ERROR(`插件 ${packageName} 加载失败:`, error)
+        this.logger.ERROR(`插件 ${packageName} 加载失败:`, String(error))
         return
       }
     }
