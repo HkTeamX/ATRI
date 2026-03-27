@@ -196,7 +196,7 @@ export class ATRI {
       const currentJson = await fs.readJSON(configPath, 'utf-8')
       const config = { ...defaultConfig, ...currentJson }
       this.configs[pluginName] = config
-      return config
+      return this.configs[pluginName]
     }
     catch (error) {
       this.logger.ERROR(`插件 ${pluginName} 配置加载失败:`, error)
