@@ -14,17 +14,9 @@
     },
     "libs/atri-lib-cron": {
       "name": "@atri-bot/lib-cron",
-      "version": "2.2.7",
+      "version": "2.1.0",
       "dependencies": {
-        "@huan_kong/logger": "^2.0.2",
         "cron": "^4.4.0",
-        "fs-extra": "^11.3.4",
-        "node-napcat-ts": "^0.4.24",
-        "yargs": "^18.0.0",
-      },
-      "devDependencies": {
-        "@types/fs-extra": "^11.0.4",
-        "@types/yargs": "^17.0.35",
       },
     },
     "libs/atri-lib-db": {
