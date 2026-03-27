@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/lib-request",
   "type": "module",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "request lib for atri framework",
   "author": "huan_kong",
   "license": "MIT",
@@ -16,9 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
+    "@atri-bot/core": "^2.2.7",
     "ky": "^1.14.3"
-  },
-  "devDependencies": {
-    "@atri-bot/core": "^2.2.7"
   }
 }
