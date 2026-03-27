@@ -307,7 +307,7 @@ export class Bot {
 
   private extractCommandBody(rawCommand: string, trigger: string | RegExp) {
     if (typeof trigger === 'string') {
-      if (!rawCommand.startsWith(trigger)) {
+      if (rawCommand !== trigger) {
         return null
       }
 

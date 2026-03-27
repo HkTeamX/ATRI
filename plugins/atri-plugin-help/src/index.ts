@@ -28,7 +28,7 @@ export const helpRegexp = /help|帮助/
 export async function handleFindCommand(commandEvents: CommandEvent[], command: string) {
   const matchedCommand = commandEvents.find((cmd) => {
     if (typeof cmd.trigger === 'string') {
-      return cmd.trigger.startsWith(command)
+      return cmd.trigger === command
     }
     else {
       return cmd.trigger.test(command)
