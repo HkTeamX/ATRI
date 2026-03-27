@@ -10,7 +10,7 @@ const atri = new ATRI({
   configDir: './config',
   logDir: './logs',
   dataDir: './data',
-  modulesDir: '.',
+  modulesDir: './node_modules',
   saveLogs: !debug,
   botConfig: {
     prefix: JSON.parse(process.env.PREFIX ?? '["/"]'),

@@ -2,6 +2,8 @@ import type { LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
 import type { Plugin } from './plugin.js'
 import path from 'node:path'
+import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan_kong/logger'
 import fs from 'fs-extra'
 import PackageJson from '../package.json' with { type: 'json' }
@@ -71,6 +73,9 @@ export class ATRI {
       logLevel: config.logLevel,
       ...config.botConfig,
     })
+    if (!path.isAbsolute(config.modulesDir)) {
+      this.config.modulesDir = path.join(process.cwd(), config.modulesDir)
+    }
 
     if (!this.config.disableATRIFlag) {
       console.log('\x1Bc')
@@ -95,8 +100,8 @@ export class ATRI {
 
   async installPlugin(packageName: string) {
     const importPaths = [
-      packageName,
-      path.posix.join(packageName, 'src/index.js'),
+      path.join(this.config.modulesDir, packageName),
+      path.join(this.config.modulesDir, packageName, 'src/index.js'),
     ]
 
     if ((this.config.logLevel ?? LogLevel.INFO) <= LogLevel.DEBUG) {
@@ -105,15 +110,11 @@ export class ATRI {
 
     let pluginModule: { plugin: Plugin<any, any> }
     try {
-      pluginModule = await import(
-        import.meta.resolve(importPaths[0], `file://${this.config.modulesDir}`),
-      ) as { plugin: Plugin<any, any> }
+      pluginModule = await import(pathToFileURL(importPaths[0]).href) as { plugin: Plugin<any, any> }
     }
     catch {
       try {
-        pluginModule = await import(
-          import.meta.resolve(importPaths[1], `file://${this.config.modulesDir}`),
-        ) as { plugin: Plugin<any, any> }
+        pluginModule = await import(pathToFileURL(importPaths[1]).href) as { plugin: Plugin<any, any> }
       }
       catch (error) {
         this.logger.ERROR(`插件 ${packageName} 加载失败:`, String(error))
