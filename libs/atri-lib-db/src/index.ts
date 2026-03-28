@@ -1,6 +1,7 @@
 import type { ATRI } from '@atri-bot/core'
 import type { AnyRelations, DrizzleConfig, EmptyRelations } from 'drizzle-orm'
 import type { MigrationConfig } from 'drizzle-orm/migrator'
+import { Logger } from '@huan_kong/logger'
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/bun-sql'
 import { migrate } from 'drizzle-orm/bun-sql/migrator'
@@ -16,6 +17,7 @@ export const timestamps = {
 }
 
 let initDbPluginOptions: InitDbPluginOptions | null = null
+let logger: ATRI['logger'] | null = null
 
 export interface InitDbPluginOptions {
   connectString: string
@@ -23,7 +25,7 @@ export interface InitDbPluginOptions {
 }
 
 export async function initDb(atri: ATRI, options: InitDbPluginOptions) {
-  const logger = atri.logger.clone({
+  logger = atri.logger.clone({
     title: 'DbPlugin-init',
   })
 
@@ -48,19 +50,19 @@ export interface DbPluginOptions<TSchema extends Record<string, unknown>, TRelat
 export async function useDb<
   TSchema extends Record<string, unknown>,
   TRelations extends AnyRelations = EmptyRelations,
->(atri: ATRI, options: DbPluginOptions<TSchema, TRelations>) {
+>(options: DbPluginOptions<TSchema, TRelations>) {
   if (!initDbPluginOptions) {
     throw new Error('请先通过 initDb 初始化数据库连接')
   }
 
-  const logger = atri.logger.clone({
+  const innerLogger = logger?.clone({
     title: 'DbPlugin',
-  })
+  }) ?? new Logger({ title: 'DbPlugin' })
 
   const Drizzle = drizzle(
     initDbPluginOptions.connectString,
     {
-      logger: { logQuery: (query, params) => logger.DEBUG('执行数据库查询:', { query, params }) },
+      logger: { logQuery: (query, params) => innerLogger?.DEBUG('执行数据库查询:', { query, params }) },
       ...initDbPluginOptions.config,
       ...options.config,
     } as DrizzleConfig<TSchema, TRelations>,
