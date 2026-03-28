@@ -14,7 +14,7 @@
     },
     "libs/atri-lib-cron": {
       "name": "@atri-bot/lib-cron",
-      "version": "2.1.1",
+      "version": "2.1.3",
       "dependencies": {
         "@atri-bot/core": "^2.2.7",
         "cron": "^4.4.0",
@@ -22,12 +22,11 @@
     },
     "libs/atri-lib-db": {
       "name": "@atri-bot/lib-db",
-      "version": "2.1.0",
+      "version": "2.1.4",
       "dependencies": {
-        "drizzle-orm": "^1.0.0-beta.20",
-      },
-      "devDependencies": {
         "@atri-bot/core": "^2.2.7",
+        "@huan_kong/logger": "^2.0.2",
+        "drizzle-orm": "^1.0.0-beta.20",
       },
     },
     "libs/atri-lib-request": {
