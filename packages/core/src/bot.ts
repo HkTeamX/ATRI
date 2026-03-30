@@ -6,6 +6,7 @@ import type { MaybePromise, NonEmptyArray } from './utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
+import { ConversationBuilder } from './builder.js'
 import { decodeUnicode, sortObjectArray } from './utils.js'
 
 export type BotConfig = NCWebsocketOptions & {
@@ -72,8 +73,6 @@ export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHand
   callback: (context: RequestContext<T>) => MaybePromise<void | 'quit'>
 }
 
-export type RegEventOptions = CommandEvent | MessageEvent | NoticeEvent | RequestEvent
-
 export interface BotEvents {
   command: CommandEvent[]
   message: MessageEvent[]
@@ -86,6 +85,10 @@ export class Bot {
   config: BotConfig
   logger: Logger
   ws: NCWebsocket
+  //           user_id@group_id [ConversationBuilder]
+  conversations: Record<string, ConversationBuilder<any, any, any>>
+  //           user_id@group_id [conversation_key,index]
+  usersConversations: Record<string, [string, number]>
   events: BotEvents = {
     command: [],
     message: [],
@@ -93,7 +96,7 @@ export class Bot {
     request: [],
   }
 
-  unloaders: { [key: string]: (() => void)[] } = {}
+  unloaders: Record<string, (() => void)[]> = {}
 
   constructor(atri: ATRI, config: BotConfig) {
     this.atri = atri
@@ -103,6 +106,8 @@ export class Bot {
       ...(config.logLevel ? { level: config.logLevel } : {}),
     })
     this.ws = new NCWebsocket(config)
+    this.conversations = {}
+    this.usersConversations = {}
   }
 
   async init() {
@@ -321,21 +326,48 @@ export class Bot {
     return rawCommand.replace(trigger, '').trim()
   }
 
-  regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type'>) {
-    const event = { ..._event, type: 'command' } as CommandEvent
-    if (event.commander) {
+  regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type' | 'callback'> & {
+    callback: CommandEvent<T, K>['callback'] | ConversationBuilder<T, K>
+  }) {
+    if (_event.commander) {
       // 如果 commander 不是函数，则包装成函数
-      if (typeof event.commander !== 'function') {
-        event.commander = (commander => () => commander)(event.commander)
+      if (typeof _event.commander !== 'function') {
+        _event.commander = (commander => () => commander)(_event.commander)
       }
 
-      event.commander()
+      _event.commander()
         .exitProcess(false)
-        .usage(`用法: ${decodeUnicode(event.trigger.toString())} [选项]`)
+        .usage(`用法: ${decodeUnicode(_event.trigger.toString())} [选项]`)
         .locale(this.config.yargsLocale ?? 'zh_CN')
         .help(false)
         .version(false)
     }
+
+    if (_event.callback instanceof ConversationBuilder) {
+      // 重写一个新的 callback 来适配 ConversationBuilder, 并添加到 conversations 里
+      const conversationOptions = _event.callback.getOptions()
+      if (this.conversations[conversationOptions.conversationKey]) {
+        const msg = `conversation_key ${conversationOptions.conversationKey} 已存在, 请更换一个新的 conversation_key`
+        this.logger.WARN(msg)
+        throw new Error(msg)
+      }
+
+      this.conversations[conversationOptions.conversationKey] = _event.callback
+
+      _event.callback = async (context) => {
+        const conversationKey = `${context.context.user_id}@${'group_id' in context.context ? context.context.group_id : 'private'}`
+        this.usersConversations[conversationKey] = [conversationOptions.conversationKey, 0]
+
+        if (!(_event.callback instanceof ConversationBuilder)) {
+          this.logger.ERROR(`异常触发插件 ${_event.pluginName} 的 conversation, 当前 callback 不是 ConversationBuilder 实例`)
+          return
+        }
+
+        return await _event.callback.getHandler()(context)
+      }
+    }
+
+    const event = { ..._event, type: 'command' } as CommandEvent
 
     this.events.command = sortObjectArray([...this.events.command, event], 'priority', 'down')
     const unload = () => {
