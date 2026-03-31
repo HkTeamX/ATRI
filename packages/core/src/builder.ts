@@ -22,6 +22,7 @@ export type ConversationHandler<TEndPoint extends keyof MessageHandler, TArgv ex
 export class ConversationBuilder<TEndPoint extends keyof MessageHandler = 'message', TArgv extends Argv = Argv, TData extends object = object> {
   private steps: Required<ConversationStepOptions<TEndPoint, TData, any>>[]
   private handler: ConversationHandler<TEndPoint, TArgv>
+  private resolver: (data: TData, context: MessageContext<TEndPoint>) => MaybePromise<void>
   private options: Required<ConversationOptions>
 
   constructor(options: ConversationOptions | string) {
@@ -32,10 +33,16 @@ export class ConversationBuilder<TEndPoint extends keyof MessageHandler = 'messa
     }
     this.steps = []
     this.handler = () => {}
+    this.resolver = () => {}
   }
 
-  setHandler(fn: ConversationHandler<TEndPoint, TArgv>): this {
+  handle(fn: ConversationHandler<TEndPoint, TArgv>): this {
     this.handler = fn
+    return this
+  }
+
+  resolve(fn: (data: TData, context: MessageContext<TEndPoint>) => MaybePromise<void>): this {
+    this.resolver = fn
     return this
   }
 
@@ -56,6 +63,10 @@ export class ConversationBuilder<TEndPoint extends keyof MessageHandler = 'messa
 
   getHandler() {
     return this.handler
+  }
+
+  getResolver() {
+    return this.resolver
   }
 
   getOptions() {

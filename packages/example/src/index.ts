@@ -2,6 +2,7 @@ import type { NCWebsocketOptionsHost } from 'node-napcat-ts'
 import process from 'node:process'
 import { ATRI } from '@atri-bot/core'
 import { LogLevel } from '@huan_kong/logger'
+import { testPlugin } from './plugin.js'
 
 const debug = process.argv.includes('--debug')
 
@@ -34,6 +35,8 @@ const atri = new ATRI({
     atri.installPlugin('@atri-bot/plugin-proxy'),
     atri.installPlugin('@atri-bot/plugin-the-cake-is-a-lie'),
   ])
+
+  await atri.installPluginByInstance(testPlugin)
 
   await atri.init()
 })()

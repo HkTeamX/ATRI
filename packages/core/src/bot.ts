@@ -327,7 +327,7 @@ export class Bot {
   }
 
   regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type' | 'callback'> & {
-    callback: CommandEvent<T, K>['callback'] | ConversationBuilder<T, K>
+    callback: CommandEvent<T, K>['callback'] | ConversationBuilder<T, K, any>
   }) {
     if (_event.commander) {
       // 如果 commander 不是函数，则包装成函数
