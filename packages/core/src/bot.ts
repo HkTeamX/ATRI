@@ -30,7 +30,7 @@ export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHand
   hideInHelp?: boolean
   pluginName: string
   commander?: () => K
-  callback: (context: CommandContext<T, K>) => MaybePromise<void | 'quit'>
+  callback: (context: CommandContext<T, K>, next: () => void) => MaybePromise<void>
 }
 
 export interface MessageContext<T extends keyof MessageHandler> {
@@ -45,7 +45,7 @@ export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHand
   needReply?: boolean
   needAdmin?: boolean
   pluginName: string
-  callback: (context: MessageContext<T>) => MaybePromise<void | 'quit'>
+  callback: (context: MessageContext<T>, next: () => void) => MaybePromise<void>
 }
 
 export interface NoticeContext<T extends keyof NoticeHandler> {
@@ -57,7 +57,7 @@ export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler
   endPoint?: T
   priority?: number
   pluginName: string
-  callback: (context: NoticeContext<T>) => MaybePromise<void | 'quit'>
+  callback: (context: NoticeContext<T>, next: () => void) => MaybePromise<void>
 }
 
 export interface RequestContext<T extends keyof RequestHandler> {
@@ -69,7 +69,7 @@ export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHand
   endPoint?: T
   priority?: number
   pluginName: string
-  callback: (context: RequestContext<T>) => MaybePromise<void | 'quit'>
+  callback: (context: RequestContext<T>, next: () => void) => MaybePromise<void>
 }
 
 export interface BotEvents {
@@ -156,9 +156,20 @@ export class Bot {
         }
 
         try {
-          const result = await event.callback({ context })
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
 
-          if (result === 'quit') {
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({ context }, next))
+            .finally(() => resolveCurrentStep())
+
+          await stepSignal
+
+          if (!nextCalled) {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
@@ -199,12 +210,20 @@ export class Bot {
             ? event.commander().fail(false).parseSync(args)
             : { _: [], $0: '' }
 
-          const result = await event.callback({
-            context,
-            options,
-          })
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
 
-          if (result === 'quit') {
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({ context, options }, next))
+            .finally(() => resolveCurrentStep())
+
+          await stepSignal
+
+          if (!nextCalled) {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
@@ -228,25 +247,36 @@ export class Bot {
 
     this.ws.on('request', async (context) => {
       this.logger.DEBUG('收到请求:', context)
-      const endpoint = `request.${context.request_type}.${'sub_type' in context ? context.sub_type : ''}`
+      const endPoint = `request.${context.request_type}.${'sub_type' in context ? context.sub_type : ''}`
 
       for (const event of this.events.request) {
-        if (!endpoint.includes(event.endPoint ?? 'request')) {
+        if (!endPoint.includes(event.endPoint ?? 'request')) {
           continue
         }
 
         try {
-          const result = await event.callback({ context })
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
 
-          if (result === 'quit') {
-            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({ context }, next))
+            .finally(() => resolveCurrentStep())
+
+          await stepSignal
+
+          if (!nextCalled) {
+            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
         }
         catch (error) {
-          this.logger.ERROR(`插件 ${event.pluginName} ${endpoint} 事件处理失败:`, error)
+          this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error)
           await this.sendMsg({ message_type: 'private', user_id: this.config.adminId[0] }, [
-            Structs.text(`插件 ${event.pluginName} ${endpoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
+            Structs.text(`插件 ${event.pluginName} ${endPoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
           ])
         }
       }
@@ -255,33 +285,44 @@ export class Bot {
     this.ws.on('notice', async (context) => {
       this.logger.DEBUG('收到通知:', context)
 
-      let endpoint = `notice.${context.notice_type}.${'sub_type' in context ? context.sub_type : ''}`
+      let endPoint = `notice.${context.notice_type}.${'sub_type' in context ? context.sub_type : ''}`
       if (context.notice_type === 'notify') {
         if (context.sub_type === 'input_status') {
-          endpoint += `.${context.group_id !== 0 ? 'group' : 'friend'}`
+          endPoint += `.${context.group_id !== 0 ? 'group' : 'friend'}`
         }
         else if (context.sub_type === 'poke') {
-          endpoint += `.${'group_id' in context ? 'group' : 'friend'}`
+          endPoint += `.${'group_id' in context ? 'group' : 'friend'}`
         }
       }
 
       for (const event of this.events.notice) {
-        if (!endpoint.includes(event.endPoint ?? 'notice')) {
+        if (!endPoint.includes(event.endPoint ?? 'notice')) {
           continue
         }
 
         try {
-          const result = await event.callback({ context })
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
 
-          if (result === 'quit') {
-            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({ context }, next))
+            .finally(() => resolveCurrentStep())
+
+          await stepSignal
+
+          if (!nextCalled) {
+            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
         }
         catch (error) {
-          this.logger.ERROR(`插件 ${event.pluginName} ${endpoint} 事件处理失败:`, error)
+          this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error)
           await this.sendMsg({ message_type: 'private', user_id: this.config.adminId[0] }, [
-            Structs.text(`插件 ${event.pluginName} ${endpoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
+            Structs.text(`插件 ${event.pluginName} ${endPoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
           ])
         }
       }
