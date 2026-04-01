@@ -6,7 +6,6 @@ import type { MaybePromise, NonEmptyArray } from './utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
-import { ConversationBuilder } from './builder.js'
 import { decodeUnicode, sortObjectArray } from './utils.js'
 
 export type BotConfig = NCWebsocketOptions & {
@@ -80,25 +79,11 @@ export interface BotEvents {
   request: RequestEvent[]
 }
 
-type AnyMessageContext = MessageHandler[keyof MessageHandler]
-
-interface UserConversationState {
-  conversationKey: string
-  stepIndex: number
-  data: Record<string, unknown>
-  retryCount: number
-  timeoutInterval: NodeJS.Timeout | null
-}
-
 export class Bot {
   atri: ATRI
   config: BotConfig
   logger: Logger
   ws: NCWebsocket
-  //           user_id@group_id [ConversationBuilder]
-  conversations: Record<string, ConversationBuilder<any, any, any>>
-  //           user_id@group_id [conversation_key,index,data,retryCount]
-  usersConversations: Record<string, UserConversationState>
   events: BotEvents = {
     command: [],
     message: [],
@@ -116,8 +101,6 @@ export class Bot {
       ...(config.logLevel ? { level: config.logLevel } : {}),
     })
     this.ws = new NCWebsocket(config)
-    this.conversations = {}
-    this.usersConversations = {}
   }
 
   async init() {
@@ -160,12 +143,6 @@ export class Bot {
       }
       else {
         this.logger.DEBUG('收到消息:', context)
-      }
-
-      // 优先处理连续对话相关内容
-      const res = await this.processConversationMessage(context)
-      if (res === 'quit') {
-        return
       }
 
       for (const event of this.events.message) {
@@ -342,9 +319,7 @@ export class Bot {
     return rawCommand.replace(trigger, '').trim()
   }
 
-  regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type' | 'callback'> & {
-    callback: CommandEvent<T, K>['callback'] | ConversationBuilder<T, K, any>
-  }) {
+  regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type'>) {
     if (_event.commander) {
       // 如果 commander 不是函数，则包装成函数
       if (typeof _event.commander !== 'function') {
@@ -359,48 +334,6 @@ export class Bot {
         .version(false)
     }
 
-    if (_event.callback instanceof ConversationBuilder) {
-      // 重写一个新的 callback 来适配 ConversationBuilder, 并添加到 conversations 里
-      const conversationOptions = _event.callback.getOptions()
-      if (this.conversations[conversationOptions.conversationKey]) {
-        const msg = `conversation_key ${conversationOptions.conversationKey} 已存在, 请更换一个新的 conversation_key`
-        this.logger.WARN(msg)
-        throw new Error(msg)
-      }
-
-      this.conversations[conversationOptions.conversationKey] = _event.callback
-
-      _event.callback = async (context) => {
-        const userKey = this.getConversationUserKey(context.context)
-        this.usersConversations[userKey] = {
-          conversationKey: conversationOptions.conversationKey,
-          stepIndex: 0,
-          data: {},
-          retryCount: 0,
-          timeoutInterval: null,
-        }
-
-        const conversation = this.conversations[conversationOptions.conversationKey]
-        if (!conversation) {
-          await this.sendMsg(context.context, [Structs.text('发生错误: 未找到对应的 conversation')])
-          this.logger.ERROR(`未找到 conversation_key ${conversationOptions.conversationKey} 对应的 ConversationBuilder`)
-          return
-        }
-
-        const res = await conversation.getHandler()(context)
-        if (res !== 'quit') {
-          this.usersConversations[userKey].data = res ?? {}
-          // 设置连续对话超时, 使用第一个step的超时时间
-          this.scheduleConversationTimeout(
-            userKey,
-            context.context,
-            this.getStepTimeout(conversation, 0),
-          )
-        }
-        return res
-      }
-    }
-
     const event = { ..._event, type: 'command' } as CommandEvent
 
     this.events.command = sortObjectArray([...this.events.command, event], 'priority', 'down')
@@ -409,172 +342,10 @@ export class Bot {
       if (index !== -1) {
         this.events.command.splice(index, 1)
       }
-
-      if (event.callback instanceof ConversationBuilder) {
-        const conversationOptions = event.callback.getOptions()
-        delete this.conversations[conversationOptions.conversationKey]
-      }
     }
     this.unloaders[event.pluginName] = this.unloaders[event.pluginName] ?? []
     this.unloaders[event.pluginName].push(unload)
     return unload
-  }
-
-  private getConversationUserKey(context: AnyMessageContext) {
-    return `${context.user_id}@${'group_id' in context ? context.group_id : 'private'}`
-  }
-
-  /**
-   * quit 表示正在消费这个消息，不再进入后续事件处理流程
-   * void 表示继续进入后续事件处理流程
-   */
-  private async processConversationMessage(context: AnyMessageContext): Promise<void | 'quit'> {
-    const userConversationKey = this.getConversationUserKey(context)
-    const userConversation = this.usersConversations[userConversationKey]
-    if (!userConversation) {
-      return
-    }
-
-    this.clearConversationTimeout(userConversationKey)
-
-    this.logger.DEBUG(`用户 ${userConversationKey} 当前处于连续对话中, 已优先进入连续对话处理流程`)
-
-    if (context.raw_message === '退出') {
-      this.logger.DEBUG(`用户 ${userConversationKey} 发送退出命令, 已退出连续对话`)
-      this.removeUserConversation(userConversationKey)
-      return
-    }
-
-    const conversation = this.conversations[userConversation.conversationKey]
-    if (!conversation) {
-      this.logger.ERROR(`未找到 conversation_key ${userConversation.conversationKey} 对应的 ConversationBuilder, 已删除该 conversationKey`)
-      this.removeUserConversation(userConversationKey)
-      delete this.conversations[userConversation.conversationKey]
-      return
-    }
-
-    const steps = conversation.getSteps()
-    const step = steps[userConversation.stepIndex]
-    if (!step) {
-      this.logger.ERROR(`conversation ${userConversation.conversationKey} 的 stepIndex ${userConversation.stepIndex} 超出范围, 已删除该 conversationKey`)
-      this.removeUserConversation(userConversationKey)
-      delete this.conversations[userConversation.conversationKey]
-      return
-    }
-
-    try {
-      const retryCount = userConversation.retryCount + 1
-      const predicatePassed = await step.predicate({ context, isLastRetry: retryCount > step.retryCount }, userConversation.data)
-      if (!predicatePassed) {
-        this.logger.DEBUG(`连续对话 ${userConversation.conversationKey} 的 step ${userConversation.stepIndex} 的 predicate 返回 false, 不触发callback`)
-        userConversation.retryCount += 1
-        if (retryCount > step.retryCount) {
-          this.logger.DEBUG(`连续对话 ${userConversation.conversationKey} 的 step ${userConversation.stepIndex} 超过重试次数, 已退出连续对话`)
-          this.removeUserConversation(userConversationKey)
-          await this.sendMsg(context, [Structs.text('连续对话预检不通过超过重试次数, 已退出连续对话')])
-          return 'quit'
-        }
-        this.scheduleConversationTimeout(userConversationKey, context, this.getStepTimeout(conversation, userConversation.stepIndex))
-        return
-      }
-
-      userConversation.retryCount = 0
-      const result = await step.callback({ context }, userConversation.data)
-      if (typeof result === 'number' && result < 0) {
-        const backStepIndex = userConversation.stepIndex + result
-        if (backStepIndex < 0 || backStepIndex >= steps.length) {
-          this.logger.ERROR(`连续对话 ${userConversation.conversationKey} 的 step ${userConversation.stepIndex} 请求回退 ${-result} 步，但目标 stepIndex ${backStepIndex} 超出范围, 已删除该 conversationKey`)
-          this.removeUserConversation(userConversationKey)
-          delete this.conversations[userConversation.conversationKey]
-          await this.sendMsg(context, [Structs.text('连续对话回退步骤超出范围, 已退出连续对话')])
-          return
-        }
-
-        this.logger.DEBUG(`连续对话 ${userConversation.conversationKey} 的 step ${userConversation.stepIndex} 请求回退 ${-result} 步, 进入 step ${backStepIndex}`)
-        userConversation.stepIndex = backStepIndex
-        this.scheduleConversationTimeout(userConversationKey, context, this.getStepTimeout(conversation, userConversation.stepIndex))
-        return
-      }
-
-      userConversation.data = result ?? {}
-
-      if (steps.length === userConversation.stepIndex + 1) {
-        this.logger.DEBUG(`连续对话 ${userConversation.conversationKey} 已完成所有 step, 进入 resolve 阶段`)
-        await conversation.getResolver()(userConversation.data, { context })
-        this.removeUserConversation(userConversationKey)
-        this.logger.DEBUG(`连续对话 ${userConversation.conversationKey} 已完成, 已删除该 conversationKey`)
-        return 'quit'
-      }
-
-      userConversation.stepIndex += 1
-      this.scheduleConversationTimeout(userConversationKey, context, this.getStepTimeout(conversation, userConversation.stepIndex))
-    }
-    catch (error) {
-      this.logger.ERROR(`连续对话 ${userConversation.conversationKey} 的 step ${userConversation.stepIndex} 处理失败:`, error)
-      await this.sendMsg(context, [
-        Structs.text(`连续对话 ${userConversation.conversationKey} 的 step ${userConversation.stepIndex} 处理失败, 请联系管理员处理: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
-      ])
-      this.removeUserConversation(userConversationKey)
-      return 'quit'
-    }
-
-    return 'quit'
-  }
-
-  private getStepTimeout(conversation: ConversationBuilder<any, any, any>, stepIndex: number) {
-    const step = conversation.getSteps()[stepIndex]
-    if (!step) {
-      return null
-    }
-    return step.timeout ?? conversation.getOptions().defaultTimeout
-  }
-
-  private clearConversationTimeout(userKey: string) {
-    const state = this.usersConversations[userKey]
-    if (state?.timeoutInterval) {
-      clearTimeout(state.timeoutInterval)
-      state.timeoutInterval = null
-    }
-  }
-
-  private removeUserConversation(userKey: string) {
-    this.clearConversationTimeout(userKey)
-    delete this.usersConversations[userKey]
-  }
-
-  private scheduleConversationTimeout(userKey: string, context: AnyMessageContext, timeout: number | null | undefined) {
-    if (timeout === null || timeout === undefined || timeout <= 0) {
-      this.clearConversationTimeout(userKey)
-      return
-    }
-
-    const state = this.usersConversations[userKey]
-    if (!state) {
-      return
-    }
-
-    this.clearConversationTimeout(userKey)
-    this.logger.DEBUG(`连续对话 ${state.conversationKey} 设置 ${timeout}ms 超时计时器`)
-
-    const target = 'group_id' in context
-      ? { message_type: 'group' as const, group_id: context.group_id, user_id: context.user_id }
-      : { message_type: 'private' as const, user_id: context.user_id }
-
-    const timer = setTimeout(() => {
-      void (async () => {
-        const latestState = this.usersConversations[userKey]
-        if (!latestState || latestState.timeoutInterval !== timer) {
-          return
-        }
-
-        this.logger.DEBUG(`连续对话 ${latestState.conversationKey} 因超时 (${timeout}ms) 已退出`)
-        this.removeUserConversation(userKey)
-        await this.sendMsg(target, [Structs.text('连续对话已超时, 已退出连续对话')])
-      })()
-    }, timeout)
-
-    timer.unref?.()
-    state.timeoutInterval = timer
   }
 
   regMessageEvent<T extends keyof MessageHandler>(_event: Omit<MessageEvent<T>, 'type'>) {

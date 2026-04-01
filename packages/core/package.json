@@ -21,7 +21,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@huan_kong/logger": "^2.0.2",
+    "@huan_kong/logger": "^2.0.3",
     "cron": "^4.4.0",
     "fs-extra": "^11.3.4",
     "node-napcat-ts": "^0.4.24",

@@ -2,7 +2,6 @@ import type { MessageHandler, NoticeHandler, RequestHandler } from 'node-napcat-
 import type { Argv } from 'yargs'
 import type { ATRI } from './atri.js'
 import type { CommandEvent, MessageEvent, NoticeEvent, RequestEvent } from './bot.js'
-import type { ConversationBuilder } from './builder.js'
 import type { MaybePromise } from './utils.js'
 
 export const buildStatus = {
@@ -28,7 +27,7 @@ export interface PluginRuntimeContext<TContext extends object, TConfig extends o
 
   event: {
     regMessageEvent: <K extends keyof MessageHandler>(event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => () => void
-    regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(event: Omit<CommandEvent<K, U>, 'type' | 'pluginName' | 'callback'> & { callback: CommandEvent<K, U>['callback'] | ConversationBuilder<K, U, any> }) => () => void
+    regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
     regNoticeEvent: <K extends keyof NoticeHandler>(event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
     regRequestEvent: <K extends keyof RequestHandler>(event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
   }
