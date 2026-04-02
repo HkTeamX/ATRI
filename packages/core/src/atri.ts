@@ -284,13 +284,16 @@ export class ATRI {
       return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
     }
 
-    const doc = await this.syncConfig(pluginName, defaultConfig ?? [])
-    const config = doc.toJS() as TConfig
+    const config = await this.syncConfig(pluginName, defaultConfig ?? []) as TConfig
     this.configs[pluginName] = config
     return this.configs[pluginName]
   }
 
-  private async syncConfig<TConfig extends object>(pluginName: string, config: ConfigItem<TConfig>[]): Promise<Document> {
+  private async syncConfig<TConfig extends object>(pluginName: string, config: ConfigItem<TConfig>[]): Promise<TConfig> {
+    if (config.length === 0) {
+      return {} as TConfig
+    }
+
     pluginName = normalizePluginName(pluginName)
 
     await fs.ensureDir(this.config.configDir)
@@ -326,7 +329,7 @@ export class ATRI {
     })
 
     await fs.promises.writeFile(configPath, doc.toString())
-    return doc
+    return doc.toJS() as TConfig
   }
 
   async saveConfig<TConfig extends object>(pluginName: string, config: TConfig) {
