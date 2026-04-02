@@ -1,9 +1,9 @@
-import type { LogLevelType } from '@huan_kong/logger'
+import type { Logger, LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from '@/bot.js'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan_kong/logger'
+import { createLogger, defaultTransformer, LogLevel, saveFileTransformer } from '@huan_kong/logger'
 import PackageJson from '@root/package.json' with { type: 'json' }
 import fs from 'fs-extra'
 import { Document, parseDocument } from 'yaml'
@@ -68,7 +68,7 @@ export class ATRI {
 
   constructor(config: ATRIConfig) {
     this.config = config
-    this.logger = new Logger({
+    this.logger = createLogger('ATRI', {
       title: 'ATRI',
       level: config.logLevel,
       transformers: [
@@ -86,6 +86,7 @@ export class ATRI {
           : []),
       ],
     })
+
     this.bot = new Bot(this, {
       logLevel: config.logLevel,
       ...config.botConfig,
