@@ -1,3 +1,4 @@
+import type { Logger } from '@huan_kong/logger'
 import type { MessageHandler } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
 import type { ATRI } from '@/atri.js'
@@ -11,6 +12,7 @@ export interface CommandContext<T extends keyof MessageHandler, K extends Argv> 
   atri: ATRI
   bot: Bot
   ws: Bot['ws']
+  logger: Logger
 }
 
 export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler, K extends Argv = Argv> {

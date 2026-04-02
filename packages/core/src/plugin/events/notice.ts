@@ -1,3 +1,4 @@
+import type { Logger } from '@huan_kong/logger'
 import type { NoticeHandler } from 'node-napcat-ts'
 import type { ATRI } from '@/atri.js'
 import type { Bot } from '@/bot.js'
@@ -8,6 +9,7 @@ export interface NoticeContext<T extends keyof NoticeHandler> {
   atri: ATRI
   bot: Bot
   ws: Bot['ws']
+  logger: Logger
 }
 
 export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler> {

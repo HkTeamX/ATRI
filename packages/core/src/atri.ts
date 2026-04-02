@@ -49,6 +49,7 @@ export class ATRI {
 
   plugins: Record<string, Plugin<any>> = {}
   configs: Record<string, any> = {}
+  loggers: Record<string, Logger> = {}
 
   private async removeUselessLogs() {
     const files = await Array.fromAsync(fs.promises.glob(`${this.config.logDir}/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log`))
@@ -156,16 +157,27 @@ export class ATRI {
       return false
     }
 
-    const pluginInstance = pluginInstances[0][1]
-    const pluginName = pluginInstance.pluginName
-    this.plugins[pluginName] = pluginInstance
-    pluginInstance.inject(this)
-    this.logger.INFO(`插件 ${pluginName} 安装成功`)
+    let pluginName = '未知插件名'
 
-    // 加载配置
-    const config = await this.loadConfig(pluginName, pluginInstance.defaultConfig)
-    pluginInstance.setConfig(config)
-    this.logger.INFO(`插件 ${pluginName} 配置加载完成`)
+    try {
+      const pluginInstance = pluginInstances[0][1]
+      pluginName = pluginInstance.pluginName
+      this.plugins[pluginName] = pluginInstance
+      pluginInstance.inject(this)
+      this.logger.INFO(`插件 ${pluginName} 安装成功`)
+
+      this.loggers[pluginName] = this.logger.clone({ title: pluginName })
+
+      // 加载配置
+      const config = await this.loadConfig(pluginName, pluginInstance.defaultConfig)
+      pluginInstance.setConfig(config)
+      this.logger.INFO(`插件 ${pluginName} 配置加载完成`)
+    }
+    catch (error) {
+      this.logger.ERROR(`插件 ${pluginName} 安装失败:`, error)
+      delete this.plugins[pluginName]
+      return false
+    }
 
     for (const moduleName in pluginModule) {
       const variable = pluginModule[moduleName]
@@ -237,7 +249,7 @@ export class ATRI {
     }
 
     delete this.plugins[pluginName]
-    delete this.configs[pluginName]
+    delete this.configs[normalizePluginName(pluginName)]
 
     this.logger.INFO(`插件 ${pluginName} 已卸载`)
     return true
@@ -250,20 +262,13 @@ export class ATRI {
       return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
     }
 
-    await fs.ensureDir(this.config.configDir)
-
-    const configPath = path.join(this.config.configDir, `${pluginName}.yaml`)
-
-    if (!await fs.promises.exists(configPath)) {
-      await this.saveDefaultConfig(pluginName, defaultConfig ?? [])
-    }
-
-    const content = await fs.promises.readFile(configPath, 'utf-8')
-    const doc = parseDocument(content)
-    return doc.toJS() as TConfig
+    const doc = await this.syncConfig(pluginName, defaultConfig ?? [])
+    const config = doc.toJS() as TConfig
+    this.configs[pluginName] = config
+    return this.configs[pluginName]
   }
 
-  async saveDefaultConfig<TConfig extends object>(pluginName: string, config: ConfigItem<TConfig>[]) {
+  private async syncConfig<TConfig extends object>(pluginName: string, config: ConfigItem<TConfig>[]): Promise<Document> {
     pluginName = normalizePluginName(pluginName)
 
     await fs.ensureDir(this.config.configDir)
@@ -299,6 +304,7 @@ export class ATRI {
     })
 
     await fs.promises.writeFile(configPath, doc.toString())
+    return doc
   }
 
   async saveConfig<TConfig extends object>(pluginName: string, config: TConfig) {
@@ -316,7 +322,10 @@ export class ATRI {
       doc = parseDocument(content)
     }
 
-    Object.entries(config).forEach(([key, val]) => doc.set(key, val))
+    Object.entries(config).forEach(([key, val]) => {
+      doc.set(key, val)
+      this.configs[pluginName][key] = val
+    })
 
     await fs.promises.writeFile(configPath, doc.toString())
   }

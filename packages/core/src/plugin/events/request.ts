@@ -1,3 +1,4 @@
+import type { Logger } from '@huan_kong/logger'
 import type { RequestHandler } from 'node-napcat-ts'
 import type { ATRI } from '@/atri.js'
 import type { Bot } from '@/bot.js'
@@ -8,6 +9,7 @@ export interface RequestContext<T extends keyof RequestHandler> {
   atri: ATRI
   bot: Bot
   ws: Bot['ws']
+  logger: Logger
 }
 
 export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHandler> {

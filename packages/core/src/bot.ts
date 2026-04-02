@@ -111,7 +111,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws }, next))
+          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -165,7 +165,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, options, atri: this.atri, bot: this, ws: this.ws }, next))
+          Promise.resolve(event.callback({ context, options, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -210,7 +210,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws }, next))
+          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -256,7 +256,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws }, next))
+          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -320,6 +320,11 @@ export class Bot {
         .locale(this.config.yargsLocale ?? 'zh_CN')
         .help(false)
         .version(false)
+    }
+
+    if (_event.trigger instanceof RegExp) {
+      _event.trigger = new RegExp(_event.trigger.source, _event.trigger.flags.replace('g', '').replace('y', ''))
+      this.logger.WARN(`插件 ${_event.pluginName} 注册了一个全局正则表达式触发器, 这可能会导致无法正确匹配的问题:`, _event.trigger)
     }
 
     const event = { ..._event, type: 'command' } as CommandEvent
