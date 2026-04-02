@@ -28,6 +28,8 @@ export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHand
   callback: (context: CommandContext<T, K>, next: () => void) => MaybePromise<void>
 }
 
+export const commandSymbol = Symbol.for('atri_command')
+
 export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends Argv> {
   #pluginName: string
   #trigger: string | RegExp
@@ -38,6 +40,7 @@ export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends A
   #hideInHelp?: boolean
   #commander: TArgv
   #callback: (context: CommandContext<TEndPoint, TArgv>, next: () => void) => MaybePromise<void>
+  symbol = commandSymbol
 
   constructor(pluginName: string, trigger: string | RegExp) {
     this.#pluginName = pluginName

@@ -20,11 +20,14 @@ export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHand
   callback: (context: RequestContext<T>, next: () => void) => MaybePromise<void>
 }
 
+export const requestSymbol = Symbol.for('atri_request')
+
 export class ATRIRequest<TEndPoint extends keyof RequestHandler> {
   #pluginName: string
   #endPoint: TEndPoint = 'request' as TEndPoint
   #priority?: number
   #callback: (context: RequestContext<TEndPoint>, next: () => void) => MaybePromise<void>
+  symbol = requestSymbol
 
   constructor(pluginName: string) {
     this.#pluginName = pluginName

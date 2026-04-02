@@ -1,5 +1,9 @@
 import type { Logger, LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from '@/bot.js'
+import type { ATRICommand } from '@/plugin/events/command.js'
+import type { ATRIMessage } from '@/plugin/events/message.js'
+import type { ATRINotice } from '@/plugin/events/notice.js'
+import type { ATRIRequest } from '@/plugin/events/request.js'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -8,11 +12,11 @@ import PackageJson from '@root/package.json' with { type: 'json' }
 import fs from 'fs-extra'
 import { Document, parseDocument } from 'yaml'
 import { Bot } from '@/bot.js'
-import { ATRICommand } from '@/plugin/events/command.js'
-import { ATRIMessage } from '@/plugin/events/message.js'
-import { ATRINotice } from '@/plugin/events/notice.js'
-import { ATRIRequest } from '@/plugin/events/request.js'
-import { Plugin } from '@/plugin/index.js'
+import { commandSymbol } from '@/plugin/events/command.js'
+import { messageSymbol } from '@/plugin/events/message.js'
+import { noticeSymbol } from '@/plugin/events/notice.js'
+import { requestSymbol } from '@/plugin/events/request.js'
+import { Plugin, pluginSymbol } from '@/plugin/index.js'
 import { decodeUnicode, normalizePluginName } from '@/utils.js'
 
 export interface ATRIConfig {
@@ -147,7 +151,7 @@ export class ATRI {
     let success = false
 
     // 查找所有plugin实例
-    const pluginInstances = Object.entries(pluginModule).filter(([_, variable]) => variable instanceof Plugin) as [string, Plugin<any>][]
+    const pluginInstances = Object.entries(pluginModule).filter(([_, variable]) => variable instanceof Plugin || variable?.symbol === pluginSymbol) as [string, Plugin<any>][]
     if (pluginInstances.length > 1) {
       this.logger.ERROR(`检测到插件模块 ${packageName} 中存在多个 Plugin 实例，可能会导致配置文件覆盖等问题，请确保每个插件模块中只有一个 Plugin 实例。`)
       return false
@@ -194,36 +198,37 @@ export class ATRI {
       const variable = pluginModule[moduleName]
 
       try {
-        if (variable instanceof Plugin) {
+        if (!('symbol' in variable) || variable.symbol === pluginSymbol) {
           continue
         }
 
-        if (variable instanceof ATRICommand) {
-          const event = variable.build()
+        if (variable.symbol === commandSymbol) {
+          const commandVariable = variable as ATRICommand<any, any>
+          const event = commandVariable.build()
           this.bot.regCommandEvent(event)
           success = true
           this.logger.DEBUG(`插件 ${pluginName} 命令 ${decodeUnicode(event.trigger.toString())} 注册成功`)
           continue
         }
-
-        if (variable instanceof ATRIMessage) {
-          const event = variable.build()
+        else if (variable.symbol === messageSymbol) {
+          const messageVariable = variable as ATRIMessage<any>
+          const event = messageVariable.build()
           this.bot.regMessageEvent(event)
           success = true
           this.logger.DEBUG(`插件 ${pluginName} 消息 ${decodeUnicode(event.trigger?.toString() ?? '无触发器')} 注册成功`)
           continue
         }
-
-        if (variable instanceof ATRINotice) {
-          const event = variable.build()
+        else if (variable.symbol === noticeSymbol) {
+          const noticeVariable = variable as ATRINotice<any>
+          const event = noticeVariable.build()
           this.bot.regNoticeEvent(event)
           success = true
           this.logger.DEBUG(`插件 ${pluginName} 通知事件注册成功`)
           continue
         }
-
-        if (variable instanceof ATRIRequest) {
-          const event = variable.build()
+        else if (variable.symbol === requestSymbol) {
+          const requestVariable = variable as ATRIRequest<any>
+          const event = requestVariable.build()
           this.bot.regRequestEvent(event)
           success = true
           this.logger.DEBUG(`插件 ${pluginName} 请求事件注册成功`)

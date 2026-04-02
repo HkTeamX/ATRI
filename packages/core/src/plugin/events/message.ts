@@ -23,6 +23,8 @@ export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHand
   callback: (context: MessageContext<T>, next: () => void) => MaybePromise<void>
 }
 
+export const messageSymbol = Symbol.for('atri_message')
+
 export class ATRIMessage<TEndPoint extends keyof MessageHandler> {
   #pluginName: string
   #trigger?: string | RegExp
@@ -31,6 +33,7 @@ export class ATRIMessage<TEndPoint extends keyof MessageHandler> {
   #needReply?: boolean
   #needAdmin?: boolean
   #callback: (context: MessageContext<TEndPoint>, next: () => void) => MaybePromise<void>
+  symbol = messageSymbol
 
   constructor(pluginName: string, trigger?: string | RegExp) {
     this.#pluginName = pluginName

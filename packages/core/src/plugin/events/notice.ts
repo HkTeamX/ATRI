@@ -20,11 +20,14 @@ export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler
   callback: (context: NoticeContext<T>, next: () => void) => MaybePromise<void>
 }
 
+export const noticeSymbol = Symbol.for('atri_notice')
+
 export class ATRINotice<TEndPoint extends keyof NoticeHandler> {
   #pluginName: string
   #endPoint: TEndPoint = 'notice' as TEndPoint
   #priority?: number
   #callback: (context: NoticeContext<TEndPoint>, next: () => void) => MaybePromise<void>
+  symbol = noticeSymbol
 
   constructor(pluginName: string) {
     this.#pluginName = pluginName

@@ -6,6 +6,8 @@ import { ATRIMessage } from '@/plugin/events/message.js'
 import { ATRINotice } from '@/plugin/events/notice.js'
 import { ATRIRequest } from '@/plugin/events/request.js'
 
+export const pluginSymbol = Symbol.for('atri_plugin')
+
 export class Plugin<TConfig extends object> {
   pluginName: string
   config: TConfig
@@ -14,6 +16,7 @@ export class Plugin<TConfig extends object> {
   uninstallHandler?: () => MaybePromise<void>
   atri!: ATRI
   logger!: Logger
+  symbol = pluginSymbol
 
   constructor(pluginName: string) {
     this.pluginName = pluginName
