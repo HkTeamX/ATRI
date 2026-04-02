@@ -4,12 +4,12 @@
   "workspaces": {
     "": {
       "devDependencies": {
-        "@antfu/eslint-config": "latest",
-        "@types/bun": "latest",
-        "eslint": "latest",
-        "jiti": "latest",
-        "tsdown": "latest",
-        "typescript": "latest",
+        "@antfu/eslint-config": "^8.0.0",
+        "@types/bun": "^1.3.11",
+        "eslint": "^10.1.0",
+        "jiti": "^2.6.1",
+        "tsdown": "^0.21.7",
+        "typescript": "^6.0.2",
       },
     },
     "libs/atri-lib-cron": {
@@ -38,7 +38,7 @@
     },
     "packages/core": {
       "name": "@atri-bot/core",
-      "version": "2.3.5",
+      "version": "2.3.6",
       "dependencies": {
         "@huan_kong/logger": "^2.0.4",
         "fs-extra": "^11.3.4",
@@ -78,9 +78,9 @@
     },
     "plugins/atri-plugin-help": {
       "name": "@atri-bot/plugin-help",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "dependencies": {
-        "@atri-bot/core": "^2.3.0",
+        "@atri-bot/core": "^2.3.6",
         "node-napcat-ts": "^0.4.24",
         "yargs": "^18.0.0",
       },
@@ -90,9 +90,9 @@
     },
     "plugins/atri-plugin-ping": {
       "name": "@atri-bot/plugin-ping",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "dependencies": {
-        "@atri-bot/core": "^2.3.0",
+        "@atri-bot/core": "^2.3.6",
         "node-napcat-ts": "^0.4.24",
         "yargs": "^18.0.0",
       },
@@ -102,22 +102,22 @@
     },
     "plugins/atri-plugin-proxy": {
       "name": "@atri-bot/plugin-proxy",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "dependencies": {
-        "@atri-bot/core": "^2.3.4",
+        "@atri-bot/core": "^2.3.6",
         "@huan_kong/node-global-proxy": "^1.0.2",
       },
     },
     "plugins/atri-plugin-the-cake-is-a-lie": {
       "name": "@atri-bot/plugin-the-cake-is-a-lie",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "dependencies": {
-        "@atri-bot/core": "^2.3.4",
-        "node-napcat-ts": "^0.4.24",
-        "yargs": "^18.0.0",
+        "@atri-bot/core": "latest",
+        "node-napcat-ts": "latest",
+        "yargs": "latest",
       },
       "devDependencies": {
-        "@types/yargs": "^17.0.35",
+        "@types/yargs": "latest",
       },
     },
   },
@@ -1385,6 +1385,8 @@
     "yocto-queue": ["yocto-queue@0.1.0", "", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
+
+    "@atri-bot/plugin-the-cake-is-a-lie/@atri-bot/core": ["@atri-bot/core@2.3.6", "", { "dependencies": { "@huan_kong/logger": "^2.0.4", "fs-extra": "^11.3.4", "node-napcat-ts": "^0.4.24", "yaml": "^2.8.3", "yargs": "^18.0.0" } }, "sha512-F57bHo7rhHvOloBdGaa5rNvbuBNX01rFgFPhTDGg6FmC2pBuNWMaEeA3uv03AqRxDguw0iCw/GKm68qZTq98sA=="],
 
     "@babel/types/@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@8.0.0-rc.3", "", {}, "sha512-8AWCJ2VJJyDFlGBep5GpaaQ9AAaE/FjAcrqI7jyssYhtL7WGV0DOKpJsQqM037xDbpRLHXsY8TwU7zDma7coOw=="],
 
