@@ -4,10 +4,19 @@ import { Structs } from 'node-napcat-ts'
 import yargs from 'yargs'
 import packageJson from '../package.json' with { type: 'json' }
 
-export const plugin = new Plugin(packageJson.name)
-  .setDefaultConfig({
-    defaultReply: 'pong',
-  })
+export interface PingConfig {
+  defaultReply: string
+}
+
+export const plugin = new Plugin<PingConfig>(packageJson.name)
+  .setDefaultConfig([
+    {
+      key: 'defaultReply',
+      val: 'pong',
+      comment: '默认回复内容',
+      place: 'top',
+    },
+  ])
 
 export const pingCommander = yargs()
   .option('reply', {

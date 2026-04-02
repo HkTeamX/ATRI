@@ -5,6 +5,7 @@ import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan_kong/logger'
 import fs from 'fs-extra'
+import { Document, parseDocument } from 'yaml'
 import PackageJson from '../package.json' with { type: 'json' }
 import { Bot } from './bot.js'
 import { ATRICommand } from './plugin/events/command.js'
@@ -29,8 +30,6 @@ export interface ATRIConfig {
   disableATRIFlag?: boolean
 }
 
-export type PluginModule = { [key: string]: Plugin<any> | ATRICommand<any, any> | ATRIMessage<any> | ATRINotice<any> | ATRIRequest<any> }[]
-
 export type ConfigItem<T extends object> = {
   [K in keyof T]: {
     key: K
@@ -39,6 +38,8 @@ export type ConfigItem<T extends object> = {
     place?: 'top' | 'bottom'
   }
 }[keyof T]
+
+export interface PluginModule { [key: string]: Plugin<any> | ATRICommand<any, any> | ATRIMessage<any> | ATRINotice<any> | ATRIRequest<any> }
 
 export class ATRI {
   version = PackageJson.version
@@ -143,15 +144,34 @@ export class ATRI {
   async installPluginByInstance(pluginModule: PluginModule): Promise<boolean> {
     let success = false
 
+    // 查找所有plugin实例
+    const pluginInstances = Object.entries(pluginModule).filter(([_, variable]) => variable instanceof Plugin) as [string, Plugin<any>][]
+    if (pluginInstances.length > 1) {
+      this.logger.WARN(`检测到插件模块中存在多个 Plugin 实例，可能会导致配置文件覆盖等问题，请确保每个插件模块中只有一个 Plugin 实例。`)
+      return false
+    }
+
+    if (pluginInstances.length === 0) {
+      this.logger.WARN(`插件模块中未找到 Plugin 实例，请确保插件模块正确导出一个 Plugin 实例。`)
+      return false
+    }
+
+    const pluginInstance = pluginInstances[0][1]
+    const pluginName = pluginInstance.pluginName
+    this.plugins[pluginName] = pluginInstance
+    pluginInstance.inject(this)
+    this.logger.INFO(`插件 ${pluginName} 安装成功`)
+
+    // 加载配置
+    const config = await this.loadConfig(pluginName, pluginInstance.defaultConfig)
+    pluginInstance.setConfig(config)
+    this.logger.INFO(`插件 ${pluginName} 配置加载完成`)
+
     for (const moduleName in pluginModule) {
       const variable = pluginModule[moduleName]
 
       try {
         if (variable instanceof Plugin) {
-          const name = variable.pluginName
-          this.plugins[name] = variable
-          success = true
-          this.logger.INFO(`插件 ${name} 安装成功`)
           continue
         }
 
@@ -159,7 +179,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regCommandEvent(event)
           success = true
-          this.logger.INFO(`命令 ${event.trigger} 注册成功`)
+          this.logger.INFO(`插件 ${pluginName} 命令 ${event.trigger} 注册成功`)
           continue
         }
 
@@ -167,7 +187,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regMessageEvent(event)
           success = true
-          this.logger.INFO(`消息事件注册成功`)
+          this.logger.INFO(`插件 ${pluginName} 消息事件注册成功`)
           continue
         }
 
@@ -175,7 +195,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regNoticeEvent(event)
           success = true
-          this.logger.INFO(`通知事件注册成功`)
+          this.logger.INFO(`插件 ${pluginName} 通知事件注册成功`)
           continue
         }
 
@@ -183,7 +203,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regRequestEvent(event)
           success = true
-          this.logger.INFO(`请求事件注册成功`)
+          this.logger.INFO(`插件 ${pluginName} 请求事件注册成功`)
           continue
         }
       }
@@ -223,53 +243,81 @@ export class ATRI {
     return true
   }
 
-  // async loadConfig<T extends object>(pluginName: string, defaultConfig?: T, refresh = false): Promise<T> {
-  //   if (!defaultConfig
-  //     || (typeof defaultConfig === 'object' && Object.keys(defaultConfig).length === 0)) {
-  //     return {} as T
-  //   }
+  async loadConfig<TConfig extends object>(pluginName: string, defaultConfig?: ConfigItem<TConfig>[], refresh = false): Promise<TConfig> {
+    pluginName = normalizePluginName(pluginName)
 
-  //   pluginName = normalizePluginName(pluginName)
+    if (!refresh) {
+      return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
+    }
 
-  //   if (!refresh) {
-  //     return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
-  //   }
+    await fs.ensureDir(this.config.configDir)
 
-  //   await fs.ensureDir(this.config.configDir)
+    const configPath = path.join(this.config.configDir, `${pluginName}.yaml`)
 
-  //   const configPath = path.join(this.config.configDir, `${pluginName}.json`)
+    if (!await fs.promises.exists(configPath)) {
+      await this.saveDefaultConfig(pluginName, defaultConfig ?? [])
+    }
 
-  //   if (!await fs.exists(configPath)) {
-  //     await fs.writeJSON(configPath, defaultConfig, { spaces: 2 })
-  //     return defaultConfig
-  //   }
+    const content = await fs.promises.readFile(configPath, 'utf-8')
+    const doc = parseDocument(content)
+    return doc.toJS() as TConfig
+  }
 
-  //   try {
-  //     const currentJson = await fs.readJSON(configPath, 'utf-8')
-  //     const config = { ...defaultConfig, ...currentJson }
-  //     this.configs[pluginName] = config
-  //     return this.configs[pluginName]
-  //   }
-  //   catch (error) {
-  //     this.logger.ERROR(`插件 ${pluginName} 配置加载失败:`, error)
-  //     return {} as T
-  //   }
-  // }
+  async saveDefaultConfig<TConfig extends object>(pluginName: string, config: ConfigItem<TConfig>[]) {
+    pluginName = normalizePluginName(pluginName)
 
-  // async saveConfig<T extends object>(pluginName: string, config: T) {
-  //   pluginName = normalizePluginName(pluginName)
+    await fs.ensureDir(this.config.configDir)
+    const configPath = path.join(this.config.configDir, `${pluginName}.yaml`)
 
-  //   await fs.ensureDir(this.config.configDir)
+    let doc: Document
+    if (!await fs.promises.exists(configPath)) {
+      doc = new Document()
+    }
+    else {
+      const content = await fs.promises.readFile(configPath, 'utf-8')
+      doc = parseDocument(content)
+    }
 
-  //   const configPath = path.join(this.config.configDir, `${pluginName}.json`)
-  //   await fs.writeJSON(configPath, config, { spaces: 2 })
+    config.forEach((item) => {
+      // 如果配置文件中已经存在该配置项，则不覆盖
+      if (doc.has(item.key)) {
+        return
+      }
 
-  //   if (!this.configs[pluginName]) {
-  //     this.configs[pluginName] = config
-  //     return
-  //   }
+      const node = doc.createNode(item.val)
 
-  //   // 保留引用
-  //   Object.assign(this.configs[pluginName], config)
-  // }
+      if (item.comment) {
+        if (item.place === 'bottom') {
+          node.comment = ` ${item.comment}`
+        }
+        else {
+          node.commentBefore = ` ${item.comment}`
+        }
+      }
+
+      doc.set(item.key, node)
+    })
+
+    await fs.promises.writeFile(configPath, doc.toString())
+  }
+
+  async saveConfig<TConfig extends object>(pluginName: string, config: TConfig) {
+    pluginName = normalizePluginName(pluginName)
+
+    await fs.ensureDir(this.config.configDir)
+    const configPath = path.join(this.config.configDir, `${pluginName}.yaml`)
+
+    let doc: Document
+    if (!await fs.promises.exists(configPath)) {
+      doc = new Document()
+    }
+    else {
+      const content = await fs.promises.readFile(configPath, 'utf-8')
+      doc = parseDocument(content)
+    }
+
+    Object.entries(config).forEach(([key, val]) => doc.set(key, val))
+
+    await fs.promises.writeFile(configPath, doc.toString())
+  }
 }
