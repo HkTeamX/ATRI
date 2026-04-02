@@ -249,6 +249,7 @@ export class ATRI {
     }
 
     delete this.plugins[pluginName]
+    delete this.loggers[pluginName]
     delete this.configs[normalizePluginName(pluginName)]
 
     this.logger.INFO(`插件 ${pluginName} 已卸载`)
