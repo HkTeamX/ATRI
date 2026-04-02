@@ -2,7 +2,8 @@ import type { Logger, LogLevelType } from '@huan_kong/logger'
 import type { MessageHandler, NCWebsocketOptions, NodeSegment, NoticeHandler, RequestHandler, SendMessageSegment } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
 import type { ATRI } from './atri.js'
-import type { MaybePromise, NonEmptyArray } from './utils.js'
+import type { CommandEvent, MessageEvent, NoticeEvent, RequestEvent } from './plugin/events/index.js'
+import type { NonEmptyArray } from './utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
@@ -13,63 +14,6 @@ export type BotConfig = NCWebsocketOptions & {
   prefix: NonEmptyArray<string>
   adminId: NonEmptyArray<number>
   yargsLocale?: string
-}
-
-export interface CommandContext<T extends keyof MessageHandler, K extends Argv> {
-  context: MessageHandler[T]
-  options: ReturnType<K['parseSync']>
-}
-
-export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler, K extends Argv = Argv> {
-  type: 'command'
-  endPoint?: T
-  trigger: string | RegExp
-  priority?: number
-  needReply?: boolean
-  needAdmin?: boolean
-  hideInHelp?: boolean
-  pluginName: string
-  commander?: () => K
-  callback: (context: CommandContext<T, K>, next: () => void) => MaybePromise<void>
-}
-
-export interface MessageContext<T extends keyof MessageHandler> {
-  context: MessageHandler[T]
-}
-
-export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHandler> {
-  type: 'message'
-  endPoint?: T
-  trigger?: string | RegExp
-  priority?: number
-  needReply?: boolean
-  needAdmin?: boolean
-  pluginName: string
-  callback: (context: MessageContext<T>, next: () => void) => MaybePromise<void>
-}
-
-export interface NoticeContext<T extends keyof NoticeHandler> {
-  context: NoticeHandler[T]
-}
-
-export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler> {
-  type: 'notice'
-  endPoint?: T
-  priority?: number
-  pluginName: string
-  callback: (context: NoticeContext<T>, next: () => void) => MaybePromise<void>
-}
-
-export interface RequestContext<T extends keyof RequestHandler> {
-  context: RequestHandler[T]
-}
-
-export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHandler> {
-  type: 'request'
-  endPoint?: T
-  priority?: number
-  pluginName: string
-  callback: (context: RequestContext<T>, next: () => void) => MaybePromise<void>
 }
 
 export interface BotEvents {

@@ -14,7 +14,9 @@ export const plugin = new Plugin(PackageJson.name)
   .onInstall(({ event, bot }) => {
     event.regMessageEvent({
       trigger: TheCakeIsALieRegexp,
-      callback: ({ context }) => {
+      callback: ({ context }, next) => {
+        next()
+
         messages.forEach((message, index) => {
           setTimeout(() => bot.sendMsg(context, [message], { reply: false, at: false }), index * 1000)
         })

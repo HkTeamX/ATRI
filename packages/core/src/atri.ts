@@ -1,6 +1,7 @@
 import type { LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
-import type { Plugin } from './plugin.js'
+import type { ATRICommand, ATRIMessage, ATRINotice, ATRIRequest } from './plugin/events/index.js'
+import type { Plugin } from './plugin/index.js'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -25,13 +26,24 @@ export interface ATRIConfig {
   disableATRIFlag?: boolean
 }
 
+export type PluginModule = { [key: string]: Plugin<any> | ATRICommand<any, any> | ATRIMessage<any> | ATRINotice<any> | ATRIRequest<any> }[]
+
+export type ConfigItem<T extends object> = {
+  [K in keyof T]: {
+    key: K
+    val: T[K]
+    comment?: string
+    place?: 'top' | 'bottom'
+  }
+}[keyof T]
+
 export class ATRI {
   version = PackageJson.version
   config: ATRIConfig
   logger: Logger
   bot: Bot
 
-  plugins: Record<string, Plugin<any, any>> = {}
+  plugins: Record<string, Plugin<any>> = {}
   configs: Record<string, any> = {}
 
   private async removeUselessLogs() {
@@ -108,13 +120,13 @@ export class ATRI {
       importPaths.reverse()
     }
 
-    let pluginModule: { plugin: Plugin<any, any> }
+    let pluginModule: PluginModule
     try {
-      pluginModule = await import(pathToFileURL(importPaths[0]).href) as { plugin: Plugin<any, any> }
+      pluginModule = await import(pathToFileURL(importPaths[0]).href)
     }
     catch {
       try {
-        pluginModule = await import(pathToFileURL(importPaths[1]).href) as { plugin: Plugin<any, any> }
+        pluginModule = await import(pathToFileURL(importPaths[1]).href)
       }
       catch (error) {
         this.logger.ERROR(`插件 ${packageName} 加载失败:`, String(error))
@@ -122,41 +134,23 @@ export class ATRI {
       }
     }
 
-    if (!('plugin' in pluginModule)) {
-      this.logger.ERROR(`插件 ${packageName} 未导出 plugin`)
-      return
-    }
-
-    return this.installPluginByInstance(pluginModule.plugin)
+    return this.installPluginByInstance(pluginModule)
   }
 
-  async installPluginByInstance<TContext extends object, TConfig extends object>(plugin: Plugin<TContext, TConfig>) {
-    const name = plugin.getPluginName()
-    if (this.plugins[name]) {
-      this.logger.WARN(`插件 ${name} 已经安装，跳过安装`)
-      return this.plugins[name] as Plugin<TContext, TConfig>
+  async installPluginByInstance(pluginModule: PluginModule) {
+    for (const moduleName in pluginModule) {
+      const variable = pluginModule[moduleName]
     }
 
-    try {
-      await plugin.build()
-    }
-    catch (error) {
-      this.logger.ERROR(`插件 ${name} 构建失败:`, error)
-      return
-    }
+    // const name = plugin.pluginName
+    // if (this.plugins[name]) {
+    //   this.logger.WARN(`插件 ${name} 已经安装，跳过安装`)
+    //   return this.plugins[name] as Plugin<TConfig>
+    // }
 
-    try {
-      await plugin.emitInstall(this)
-      this.logger.INFO(`插件 ${name} 安装完成`)
-    }
-    catch (error) {
-      this.logger.ERROR(`插件 ${name} 安装失败:`, error)
-      return
-    }
+    // this.plugins[name] = plugin
 
-    this.plugins[name] = plugin
-
-    return plugin
+    // return plugin
   }
 
   async uninstallPlugin(pluginName: string) {
@@ -166,59 +160,59 @@ export class ATRI {
       return
     }
 
-    await this.plugins[pluginName].emitUninstall()
     delete this.plugins[pluginName]
     delete this.configs[pluginName]
+
     this.logger.INFO(`插件 ${pluginName} 已卸载`)
   }
 
-  async loadConfig<T extends object>(pluginName: string, defaultConfig?: T, refresh = false): Promise<T> {
-    if (!defaultConfig
-      || (typeof defaultConfig === 'object' && Object.keys(defaultConfig).length === 0)) {
-      return {} as T
-    }
+  // async loadConfig<T extends object>(pluginName: string, defaultConfig?: T, refresh = false): Promise<T> {
+  //   if (!defaultConfig
+  //     || (typeof defaultConfig === 'object' && Object.keys(defaultConfig).length === 0)) {
+  //     return {} as T
+  //   }
 
-    pluginName = normalizePluginName(pluginName)
+  //   pluginName = normalizePluginName(pluginName)
 
-    if (!refresh) {
-      return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
-    }
+  //   if (!refresh) {
+  //     return this.configs[pluginName] ?? await this.loadConfig(pluginName, defaultConfig, true)
+  //   }
 
-    await fs.ensureDir(this.config.configDir)
+  //   await fs.ensureDir(this.config.configDir)
 
-    const configPath = path.join(this.config.configDir, `${pluginName}.json`)
+  //   const configPath = path.join(this.config.configDir, `${pluginName}.json`)
 
-    if (!await fs.exists(configPath)) {
-      await fs.writeJSON(configPath, defaultConfig, { spaces: 2 })
-      return defaultConfig
-    }
+  //   if (!await fs.exists(configPath)) {
+  //     await fs.writeJSON(configPath, defaultConfig, { spaces: 2 })
+  //     return defaultConfig
+  //   }
 
-    try {
-      const currentJson = await fs.readJSON(configPath, 'utf-8')
-      const config = { ...defaultConfig, ...currentJson }
-      this.configs[pluginName] = config
-      return this.configs[pluginName]
-    }
-    catch (error) {
-      this.logger.ERROR(`插件 ${pluginName} 配置加载失败:`, error)
-      return {} as T
-    }
-  }
+  //   try {
+  //     const currentJson = await fs.readJSON(configPath, 'utf-8')
+  //     const config = { ...defaultConfig, ...currentJson }
+  //     this.configs[pluginName] = config
+  //     return this.configs[pluginName]
+  //   }
+  //   catch (error) {
+  //     this.logger.ERROR(`插件 ${pluginName} 配置加载失败:`, error)
+  //     return {} as T
+  //   }
+  // }
 
-  async saveConfig<T extends object>(pluginName: string, config: T) {
-    pluginName = normalizePluginName(pluginName)
+  // async saveConfig<T extends object>(pluginName: string, config: T) {
+  //   pluginName = normalizePluginName(pluginName)
 
-    await fs.ensureDir(this.config.configDir)
+  //   await fs.ensureDir(this.config.configDir)
 
-    const configPath = path.join(this.config.configDir, `${pluginName}.json`)
-    await fs.writeJSON(configPath, config, { spaces: 2 })
+  //   const configPath = path.join(this.config.configDir, `${pluginName}.json`)
+  //   await fs.writeJSON(configPath, config, { spaces: 2 })
 
-    if (!this.configs[pluginName]) {
-      this.configs[pluginName] = config
-      return
-    }
+  //   if (!this.configs[pluginName]) {
+  //     this.configs[pluginName] = config
+  //     return
+  //   }
 
-    // 保留引用
-    Object.assign(this.configs[pluginName], config)
-  }
+  //   // 保留引用
+  //   Object.assign(this.configs[pluginName], config)
+  // }
 }

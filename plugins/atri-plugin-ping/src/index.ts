@@ -16,28 +16,32 @@ export async function handlePingCommand({ options }: CommandContext<'message', t
 }
 
 export const plugin = new Plugin(packageJson.name)
-  .setDefaultConfig({
-    defaultReply: 'pong',
-  })
-  .onInstall(
-    ({ bot, logger, event, config }) => {
-      event.regCommandEvent({
-        trigger: 'ping',
-        commander: pingCommander,
-        callback: async ({ context, options }) => {
-          logger.INFO('Received ping command with options:', options)
-          await bot.sendMsg(context, [Structs.text(options.reply ?? config.defaultReply)], { reply: false, at: false })
-        },
-      })
+// .setDefaultConfig({
+//   defaultReply: 'pong',
+// })
+// .onInstall(
+//   ({ bot, logger, event, config }) => {
+//     event.regCommandEvent({
+//       trigger: 'ping',
+//       commander: pingCommander,
+//       callback: async ({ context, options }, next) => {
+//         next()
 
-      event.regCommandEvent({
-        trigger: 'p2ng',
-        commander: pingCommander,
-        callback: async ({ context, options }) => {
-          logger.INFO('Received p2ng command with options:', options)
-          const msg = await handlePingCommand({ context, options }, config.defaultReply)
-          await bot.sendMsg(context, msg, { reply: false, at: false })
-        },
-      })
-    },
-  )
+//         logger.INFO('Received ping command with options:', options)
+//         await bot.sendMsg(context, [Structs.text(options.reply ?? config.defaultReply)], { reply: false, at: false })
+//       },
+//     })
+
+//     event.regCommandEvent({
+//       trigger: 'p2ng',
+//       commander: pingCommander,
+//       callback: async ({ context, options }, next) => {
+//         next()
+
+//         logger.INFO('Received p2ng command with options:', options)
+//         const msg = await handlePingCommand({ context, options }, config.defaultReply)
+//         await bot.sendMsg(context, msg, { reply: false, at: false })
+//       },
+//     })
+//   },
+// )

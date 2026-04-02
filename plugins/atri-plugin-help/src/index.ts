@@ -75,13 +75,11 @@ export const plugin = new Plugin(PackageJson.name)
         if (command) {
           const msg = await handleFindCommand(bot.events.command, command)
           await bot.sendMsg(context, msg)
-          return 'quit' as const
+          return
         }
 
         const msg = await handleCommandList(bot.events.command, page, size, atri.version, bot.config.prefix[0])
         await bot.sendMsg(context, msg)
-
-        return 'quit' as const
       },
     })
   })
