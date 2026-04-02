@@ -97,7 +97,7 @@ export class Bot {
           !endPoint.includes(event.endPoint ?? 'message')
           || (event.needReply && !isReply)
           || (event.needAdmin && !isAdmin)
-          || (event.trigger && !(typeof event.trigger === 'string' ? context.raw_message.includes(event.trigger) : event.trigger.test(context.raw_message)))
+          || (event.trigger && !(typeof event.trigger === 'string' ? context.raw_message.startsWith(event.trigger) : event.trigger.test(context.raw_message)))
         ) {
           continue
         }
@@ -322,9 +322,9 @@ export class Bot {
         .version(false)
     }
 
-    if (_event.trigger instanceof RegExp) {
+    if (_event.trigger instanceof RegExp && (_event.trigger.flags.includes('g') || _event.trigger.flags.includes('y'))) {
       _event.trigger = new RegExp(_event.trigger.source, _event.trigger.flags.replace('g', '').replace('y', ''))
-      this.logger.WARN(`插件 ${_event.pluginName} 注册了一个全局正则表达式触发器, 这可能会导致无法正确匹配的问题:`, _event.trigger)
+      this.logger.WARN(`插件 ${_event.pluginName} 注册了一个全局正则表达式触发器, 这可能会导致无法正确匹配的问题:`, decodeUnicode(_event.trigger.toString()))
     }
 
     const event = { ..._event, type: 'command' } as CommandEvent

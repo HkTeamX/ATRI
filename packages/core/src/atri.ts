@@ -13,7 +13,7 @@ import { ATRIMessage } from '@/plugin/events/message.js'
 import { ATRINotice } from '@/plugin/events/notice.js'
 import { ATRIRequest } from '@/plugin/events/request.js'
 import { Plugin } from '@/plugin/index.js'
-import { normalizePluginName } from '@/utils.js'
+import { decodeUnicode, normalizePluginName } from '@/utils.js'
 
 export interface ATRIConfig {
   logLevel?: LogLevelType
@@ -139,21 +139,21 @@ export class ATRI {
       }
     }
 
-    return this.installPluginByInstance(pluginModule)
+    return this.installPluginByInstance(pluginModule, packageName)
   }
 
-  async installPluginByInstance(pluginModule: PluginModule): Promise<boolean> {
+  async installPluginByInstance(pluginModule: PluginModule, packageName = '未知模块'): Promise<boolean> {
     let success = false
 
     // 查找所有plugin实例
     const pluginInstances = Object.entries(pluginModule).filter(([_, variable]) => variable instanceof Plugin) as [string, Plugin<any>][]
     if (pluginInstances.length > 1) {
-      this.logger.WARN(`检测到插件模块中存在多个 Plugin 实例，可能会导致配置文件覆盖等问题，请确保每个插件模块中只有一个 Plugin 实例。`)
+      this.logger.ERROR(`检测到插件模块 ${packageName} 中存在多个 Plugin 实例，可能会导致配置文件覆盖等问题，请确保每个插件模块中只有一个 Plugin 实例。`)
       return false
     }
 
     if (pluginInstances.length === 0) {
-      this.logger.WARN(`插件模块中未找到 Plugin 实例，请确保插件模块正确导出一个 Plugin 实例。`)
+      this.logger.ERROR(`插件模块 ${packageName} 中未找到 Plugin 实例，请确保插件模块正确导出一个 Plugin 实例。`)
       return false
     }
 
@@ -182,6 +182,9 @@ export class ATRI {
     catch (error) {
       this.logger.ERROR(`插件 ${pluginName} 安装失败:`, error)
       delete this.plugins[pluginName]
+      delete this.loggers[pluginName]
+      delete this.configs[normalizePluginName(pluginName)]
+
       return false
     }
 
@@ -197,7 +200,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regCommandEvent(event)
           success = true
-          this.logger.INFO(`插件 ${pluginName} 命令 ${event.trigger} 注册成功`)
+          this.logger.DEBUG(`插件 ${pluginName} 命令 ${decodeUnicode(event.trigger.toString())} 注册成功`)
           continue
         }
 
@@ -205,7 +208,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regMessageEvent(event)
           success = true
-          this.logger.INFO(`插件 ${pluginName} 消息事件注册成功`)
+          this.logger.DEBUG(`插件 ${pluginName} 消息 ${decodeUnicode(event.trigger?.toString() ?? '无触发器')} 注册成功`)
           continue
         }
 
@@ -213,7 +216,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regNoticeEvent(event)
           success = true
-          this.logger.INFO(`插件 ${pluginName} 通知事件注册成功`)
+          this.logger.DEBUG(`插件 ${pluginName} 通知事件注册成功`)
           continue
         }
 
@@ -221,7 +224,7 @@ export class ATRI {
           const event = variable.build()
           this.bot.regRequestEvent(event)
           success = true
-          this.logger.INFO(`插件 ${pluginName} 请求事件注册成功`)
+          this.logger.DEBUG(`插件 ${pluginName} 请求事件注册成功`)
           continue
         }
       }
@@ -237,7 +240,7 @@ export class ATRI {
   async uninstallPlugin(pluginName: string): Promise<boolean> {
     const plugin = this.plugins[pluginName]
     if (!plugin) {
-      this.logger.WARN(`插件 ${pluginName} 未安装，无法卸载`)
+      this.logger.ERROR(`插件 ${pluginName} 未安装，无法卸载`)
       return false
     }
 
