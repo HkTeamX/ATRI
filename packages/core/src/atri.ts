@@ -1,19 +1,19 @@
 import type { LogLevelType } from '@huan_kong/logger'
-import type { BotConfig } from './bot.js'
+import type { BotConfig } from '@/bot.js'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan_kong/logger'
+import PackageJson from '@root/package.json' with { type: 'json' }
 import fs from 'fs-extra'
 import { Document, parseDocument } from 'yaml'
-import PackageJson from '../package.json' with { type: 'json' }
-import { Bot } from './bot.js'
-import { ATRICommand } from './plugin/events/command.js'
-import { ATRIMessage } from './plugin/events/message.js'
-import { ATRINotice } from './plugin/events/notice.js'
-import { ATRIRequest } from './plugin/events/request.js'
-import { Plugin } from './plugin/index.js'
-import { normalizePluginName } from './utils.js'
+import { Bot } from '@/bot.js'
+import { ATRICommand } from '@/plugin/events/command.js'
+import { ATRIMessage } from '@/plugin/events/message.js'
+import { ATRINotice } from '@/plugin/events/notice.js'
+import { ATRIRequest } from '@/plugin/events/request.js'
+import { Plugin } from '@/plugin/index.js'
+import { normalizePluginName } from '@/utils.js'
 
 export interface ATRIConfig {
   logLevel?: LogLevelType
@@ -172,6 +172,12 @@ export class ATRI {
       const config = await this.loadConfig(pluginName, pluginInstance.defaultConfig)
       pluginInstance.setConfig(config)
       this.logger.INFO(`插件 ${pluginName} 配置加载完成`)
+
+      // 执行安装函数
+      if (pluginInstance.installHandler) {
+        await pluginInstance.installHandler()
+        this.logger.INFO(`插件 ${pluginName} 安装函数执行完成`)
+      }
     }
     catch (error) {
       this.logger.ERROR(`插件 ${pluginName} 安装失败:`, error)
@@ -246,6 +252,17 @@ export class ATRI {
         }
       }
       delete this.bot.unloaders[pluginName]
+    }
+
+    // 执行卸载函数
+    if (plugin.uninstallHandler) {
+      try {
+        await plugin.uninstallHandler()
+        this.logger.INFO(`插件 ${pluginName} 卸载函数执行完成`)
+      }
+      catch (error) {
+        this.logger.ERROR(`执行插件 ${pluginName} 的卸载函数时发生错误:`, error)
+      }
     }
 
     delete this.plugins[pluginName]

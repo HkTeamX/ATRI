@@ -1,16 +1,16 @@
 import type { Logger, LogLevelType } from '@huan_kong/logger'
 import type { MessageHandler, NCWebsocketOptions, NodeSegment, NoticeHandler, RequestHandler, SendMessageSegment } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
-import type { ATRI } from './atri.js'
-import type { CommandEvent } from './plugin/events/command.js'
-import type { MessageEvent } from './plugin/events/message.js'
-import type { NoticeEvent } from './plugin/events/notice.js'
-import type { RequestEvent } from './plugin/events/request.js'
-import type { NonEmptyArray } from './utils.js'
+import type { ATRI } from '@/atri.js'
+import type { CommandEvent } from '@/plugin/events/command.js'
+import type { MessageEvent } from '@/plugin/events/message.js'
+import type { NoticeEvent } from '@/plugin/events/notice.js'
+import type { RequestEvent } from '@/plugin/events/request.js'
+import type { NonEmptyArray } from '@/utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
-import { decodeUnicode, sortObjectArray } from './utils.js'
+import { decodeUnicode, sortObjectArray } from '@/utils.js'
 
 export type BotConfig = NCWebsocketOptions & {
   logLevel?: LogLevelType

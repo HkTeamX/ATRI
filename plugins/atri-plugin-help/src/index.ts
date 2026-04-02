@@ -4,6 +4,8 @@ import { Structs } from 'node-napcat-ts'
 import yargs from 'yargs'
 import PackageJson from '../package.json' with { type: 'json' }
 
+export const plugin = new Plugin(PackageJson.name)
+
 export const helpCommander = yargs()
   .option('command', {
     alias: 'c',
@@ -22,8 +24,6 @@ export const helpCommander = yargs()
     description: '每页条数',
     default: 8,
   })
-
-export const helpRegexp = /help|帮助/
 
 export async function handleFindCommand(commandEvents: CommandEvent[], command: string) {
   const matchedCommand = commandEvents.find((cmd) => {
@@ -63,23 +63,18 @@ export async function handleCommandList(
   ]
 }
 
-export const plugin = new Plugin(PackageJson.name)
-  .onInstall(({ event, bot, atri }) => {
-    event.regCommandEvent({
-      trigger: helpRegexp,
-      commander: helpCommander,
-      priority: 9999,
-      callback: async ({ context, options }) => {
-        const { page, size, command } = options
+export const help = plugin.command(/help|帮助/)
+  .priority(9999)
+  .commander(helpCommander)
+  .callback(async ({ context, options, bot, atri }) => {
+    const { page, size, command } = options
 
-        if (command) {
-          const msg = await handleFindCommand(bot.events.command, command)
-          await bot.sendMsg(context, msg)
-          return
-        }
+    if (command) {
+      const msg = await handleFindCommand(bot.events.command, command)
+      await bot.sendMsg(context, msg)
+      return
+    }
 
-        const msg = await handleCommandList(bot.events.command, page, size, atri.version, bot.config.prefix[0])
-        await bot.sendMsg(context, msg)
-      },
-    })
+    const msg = await handleCommandList(bot.events.command, page, size, atri.version, bot.config.prefix[0])
+    await bot.sendMsg(context, msg)
   })

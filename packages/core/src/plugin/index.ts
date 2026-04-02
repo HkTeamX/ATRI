@@ -1,4 +1,5 @@
 import type { ATRI, ConfigItem } from '@/atri.js'
+import type { MaybePromise } from '@/utils.js'
 import { ATRICommand } from '@/plugin/events/command.js'
 import { ATRIMessage } from '@/plugin/events/message.js'
 import { ATRINotice } from '@/plugin/events/notice.js'
@@ -8,11 +9,23 @@ export class Plugin<TConfig extends object> {
   pluginName: string
   config: TConfig
   defaultConfig?: ConfigItem<TConfig>[]
+  installHandler?: () => MaybePromise<void>
+  uninstallHandler?: () => MaybePromise<void>
   atri!: ATRI
 
   constructor(pluginName: string) {
     this.pluginName = pluginName
     this.config = {} as TConfig
+  }
+
+  onInstall(handler: () => MaybePromise<void>) {
+    this.installHandler = handler
+    return this
+  }
+
+  onUninstall(handler: () => MaybePromise<void>) {
+    this.uninstallHandler = handler
+    return this
   }
 
   setDefaultConfig(config: ConfigItem<TConfig>[]) {
