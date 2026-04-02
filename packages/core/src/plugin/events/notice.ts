@@ -1,8 +1,13 @@
 import type { NoticeHandler } from 'node-napcat-ts'
+import type { ATRI } from '@/atri.js'
+import type { Bot } from '@/bot.js'
 import type { MaybePromise } from '@/utils.js'
 
 export interface NoticeContext<T extends keyof NoticeHandler> {
   context: NoticeHandler[T]
+  atri: ATRI
+  bot: Bot
+  ws: Bot['ws']
 }
 
 export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler> {

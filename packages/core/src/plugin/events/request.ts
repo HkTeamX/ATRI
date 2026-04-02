@@ -1,8 +1,13 @@
 import type { RequestHandler } from 'node-napcat-ts'
+import type { ATRI } from '@/atri.js'
+import type { Bot } from '@/bot.js'
 import type { MaybePromise } from '@/utils.js'
 
 export interface RequestContext<T extends keyof RequestHandler> {
   context: RequestHandler[T]
+  atri: ATRI
+  bot: Bot
+  ws: Bot['ws']
 }
 
 export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHandler> {

@@ -2,7 +2,10 @@ import type { Logger, LogLevelType } from '@huan_kong/logger'
 import type { MessageHandler, NCWebsocketOptions, NodeSegment, NoticeHandler, RequestHandler, SendMessageSegment } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
 import type { ATRI } from './atri.js'
-import type { CommandEvent, MessageEvent, NoticeEvent, RequestEvent } from './plugin/events/index.js'
+import type { CommandEvent } from './plugin/events/command.js'
+import type { MessageEvent } from './plugin/events/message.js'
+import type { NoticeEvent } from './plugin/events/notice.js'
+import type { RequestEvent } from './plugin/events/request.js'
 import type { NonEmptyArray } from './utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
@@ -108,7 +111,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context }, next))
+          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -162,7 +165,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, options }, next))
+          Promise.resolve(event.callback({ context, options, atri: this.atri, bot: this, ws: this.ws }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -207,7 +210,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context }, next))
+          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -253,7 +256,7 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context }, next))
+          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal

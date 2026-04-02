@@ -1,7 +1,5 @@
 import type { LogLevelType } from '@huan_kong/logger'
 import type { BotConfig } from './bot.js'
-import type { ATRICommand, ATRIMessage, ATRINotice, ATRIRequest } from './plugin/events/index.js'
-import type { Plugin } from './plugin/index.js'
 import path from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -9,6 +7,11 @@ import { defaultTransformer, Logger, LogLevel, saveFileTransformer } from '@huan
 import fs from 'fs-extra'
 import PackageJson from '../package.json' with { type: 'json' }
 import { Bot } from './bot.js'
+import { ATRICommand } from './plugin/events/command.js'
+import { ATRIMessage } from './plugin/events/message.js'
+import { ATRINotice } from './plugin/events/notice.js'
+import { ATRIRequest } from './plugin/events/request.js'
+import { Plugin } from './plugin/index.js'
 import { normalizePluginName } from './utils.js'
 
 export interface ATRIConfig {
@@ -110,7 +113,7 @@ export class ATRI {
     this.logger.INFO(`ATRI 初始化完成`)
   }
 
-  async installPlugin(packageName: string) {
+  async installPlugin(packageName: string): Promise<boolean> {
     const importPaths = [
       path.join(this.config.modulesDir, packageName),
       path.join(this.config.modulesDir, packageName, 'src/index.js'),
@@ -130,40 +133,94 @@ export class ATRI {
       }
       catch (error) {
         this.logger.ERROR(`插件 ${packageName} 加载失败:`, String(error))
-        return
+        return false
       }
     }
 
     return this.installPluginByInstance(pluginModule)
   }
 
-  async installPluginByInstance(pluginModule: PluginModule) {
+  async installPluginByInstance(pluginModule: PluginModule): Promise<boolean> {
+    let success = false
+
     for (const moduleName in pluginModule) {
       const variable = pluginModule[moduleName]
+
+      try {
+        if (variable instanceof Plugin) {
+          const name = variable.pluginName
+          this.plugins[name] = variable
+          success = true
+          this.logger.INFO(`插件 ${name} 安装成功`)
+          continue
+        }
+
+        if (variable instanceof ATRICommand) {
+          const event = variable.build()
+          this.bot.regCommandEvent(event)
+          success = true
+          this.logger.INFO(`命令 ${event.trigger} 注册成功`)
+          continue
+        }
+
+        if (variable instanceof ATRIMessage) {
+          const event = variable.build()
+          this.bot.regMessageEvent(event)
+          success = true
+          this.logger.INFO(`消息事件注册成功`)
+          continue
+        }
+
+        if (variable instanceof ATRINotice) {
+          const event = variable.build()
+          this.bot.regNoticeEvent(event)
+          success = true
+          this.logger.INFO(`通知事件注册成功`)
+          continue
+        }
+
+        if (variable instanceof ATRIRequest) {
+          const event = variable.build()
+          this.bot.regRequestEvent(event)
+          success = true
+          this.logger.INFO(`请求事件注册成功`)
+          continue
+        }
+      }
+      catch (error) {
+        this.logger.ERROR(`处理模块 ${moduleName} 时发生错误:`, error)
+        continue
+      }
     }
 
-    // const name = plugin.pluginName
-    // if (this.plugins[name]) {
-    //   this.logger.WARN(`插件 ${name} 已经安装，跳过安装`)
-    //   return this.plugins[name] as Plugin<TConfig>
-    // }
-
-    // this.plugins[name] = plugin
-
-    // return plugin
+    return success
   }
 
-  async uninstallPlugin(pluginName: string) {
+  async uninstallPlugin(pluginName: string): Promise<boolean> {
     const plugin = this.plugins[pluginName]
     if (!plugin) {
       this.logger.WARN(`插件 ${pluginName} 未安装，无法卸载`)
-      return
+      return false
+    }
+
+    const unloaders = this.bot.unloaders[pluginName]
+    if (unloaders) {
+      for (const unload of unloaders) {
+        try {
+          unload()
+        }
+        catch (error) {
+          this.logger.ERROR(`执行插件 ${pluginName} 的取消函数时发生错误:`, error)
+        }
+      }
+      delete this.bot.unloaders[pluginName]
     }
 
     delete this.plugins[pluginName]
     delete this.configs[pluginName]
 
     this.logger.INFO(`插件 ${pluginName} 已卸载`)
+    return true
   }
 
   // async loadConfig<T extends object>(pluginName: string, defaultConfig?: T, refresh = false): Promise<T> {

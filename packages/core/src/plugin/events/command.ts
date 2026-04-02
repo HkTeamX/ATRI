@@ -1,11 +1,16 @@
 import type { MessageHandler } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
+import type { ATRI } from '@/atri.js'
+import type { Bot } from '@/bot.js'
 import type { MaybePromise } from '@/utils.js'
 import yargs from 'yargs'
 
 export interface CommandContext<T extends keyof MessageHandler, K extends Argv> {
   context: MessageHandler[T]
   options: ReturnType<K['parseSync']>
+  atri: ATRI
+  bot: Bot
+  ws: Bot['ws']
 }
 
 export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler, K extends Argv = Argv> {
