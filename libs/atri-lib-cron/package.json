@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@atri-bot/core": "^2.3.4",
+    "@huan_kong/logger": "^2.0.4",
     "cron": "^4.4.0"
   }
 }
