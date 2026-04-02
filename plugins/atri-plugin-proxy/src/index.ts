@@ -28,11 +28,13 @@ export const plugin = new Plugin<ProxyConfig>(PackageJson.name)
   ])
   .onInstall(() => {
     if (!plugin.config.enable || plugin.config.proxy.http === '' || plugin.config.proxy.https === '') {
+      plugin.logger.INFO('全局代理未启用')
       return
     }
 
     proxy.setConfig(plugin.config.proxy)
     proxy.start()
+    plugin.logger.INFO('全局代理已启用')
   })
   .onUninstall(() => {
     proxy.stop()

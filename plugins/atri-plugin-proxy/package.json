@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@atri-bot/core": "^2.3.3",
+    "@atri-bot/core": "^2.3.4",
     "@huan_kong/node-global-proxy": "^1.0.2"
   }
 }
