@@ -1,3 +1,4 @@
+import type { Logger } from '@huan_kong/logger'
 import type { ATRI, ConfigItem } from '@/atri.js'
 import type { MaybePromise } from '@/utils.js'
 import { ATRICommand } from '@/plugin/events/command.js'
@@ -12,6 +13,7 @@ export class Plugin<TConfig extends object> {
   installHandler?: () => MaybePromise<void>
   uninstallHandler?: () => MaybePromise<void>
   atri!: ATRI
+  logger!: Logger
 
   constructor(pluginName: string) {
     this.pluginName = pluginName
@@ -38,8 +40,9 @@ export class Plugin<TConfig extends object> {
     return this
   }
 
-  inject(atri: ATRI) {
+  inject(atri: ATRI, logger: Logger) {
     this.atri = atri
+    this.logger = logger
   }
 
   async refreshConfig() {

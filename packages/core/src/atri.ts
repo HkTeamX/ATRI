@@ -162,11 +162,12 @@ export class ATRI {
     try {
       const pluginInstance = pluginInstances[0][1]
       pluginName = pluginInstance.pluginName
-      this.plugins[pluginName] = pluginInstance
-      pluginInstance.inject(this)
-      this.logger.INFO(`插件 ${pluginName} 安装成功`)
 
       this.loggers[pluginName] = this.logger.clone({ title: pluginName })
+
+      this.plugins[pluginName] = pluginInstance
+      pluginInstance.inject(this, this.loggers[pluginName])
+      this.logger.INFO(`插件 ${pluginName} 安装成功`)
 
       // 加载配置
       const config = await this.loadConfig(pluginName, pluginInstance.defaultConfig)
