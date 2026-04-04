@@ -469,7 +469,10 @@ export class Bot {
       timeoutId = setTimeout(async () => {
         this.isInConversation.delete(identifier)
         clearTimeout(timeoutId)
-        await this.sendMsg(context, options.replyMsg ?? '当前对话已超时')
+
+        if (options.needReply !== false) {
+          await this.sendMsg(context, options.replyMsg ?? '当前对话已超时')
+        }
 
         this.conversationEvent.off(`ctx:${identifier}`, handler)
         if (options.throwOnTimeout) {
