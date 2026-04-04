@@ -26,16 +26,17 @@ export const plugin = new Plugin<ProxyConfig>(PackageJson.name)
       comment: '代理配置',
     },
   ])
-  .onInstall(() => {
-    if (!plugin.config.enable || plugin.config.proxy.http === '' || plugin.config.proxy.https === '') {
-      plugin.logger.INFO('全局代理未启用')
+  .onInstall(({ config, logger }) => {
+    if (!config.enable || config.proxy.http === '' || config.proxy.https === '') {
+      logger.INFO('全局代理未启用')
       return
     }
 
-    proxy.setConfig(plugin.config.proxy)
+    proxy.setConfig(config.proxy)
     proxy.start()
-    plugin.logger.INFO('全局代理已启用')
+    logger.INFO('全局代理已启用')
   })
-  .onUninstall(() => {
+  .onUninstall(({ logger }) => {
     proxy.stop()
+    logger.INFO('全局代理已停用')
   })

@@ -4,15 +4,18 @@ import type { ATRI } from '@/atri.js'
 import type { Bot } from '@/bot.js'
 import type { MaybePromise } from '@/utils.js'
 
-export interface MessageContext<T extends keyof MessageHandler> {
+export interface MessageContext<T extends keyof MessageHandler, TConfig extends object> {
   context: MessageHandler[T]
+  config: TConfig
   atri: ATRI
   bot: Bot
   ws: Bot['ws']
   logger: Logger
+  refreshConfig: () => Promise<TConfig>
+  saveConfig: (config?: TConfig) => Promise<void>
 }
 
-export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHandler> {
+export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHandler, TConfig extends object = object> {
   type: 'message'
   endPoint?: T
   trigger?: string | RegExp
@@ -20,19 +23,19 @@ export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHand
   needReply?: boolean
   needAdmin?: boolean
   pluginName: string
-  callback: (context: MessageContext<T>, next: () => void) => MaybePromise<void>
+  callback: (context: MessageContext<T, TConfig>, next: () => void) => MaybePromise<void>
 }
 
 export const messageSymbol = Symbol.for('atri_message')
 
-export class ATRIMessage<TEndPoint extends keyof MessageHandler> {
+export class ATRIMessage<TEndPoint extends keyof MessageHandler, TConfig extends object> {
   #pluginName: string
   #trigger?: string | RegExp
   #endPoint: TEndPoint = 'message' as TEndPoint
   #priority?: number
   #needReply?: boolean
   #needAdmin?: boolean
-  #callback: (context: MessageContext<TEndPoint>, next: () => void) => MaybePromise<void>
+  #callback: (context: MessageContext<TEndPoint, TConfig>, next: () => void) => MaybePromise<void>
   symbol = messageSymbol
 
   constructor(pluginName: string, trigger?: string | RegExp) {
@@ -46,9 +49,9 @@ export class ATRIMessage<TEndPoint extends keyof MessageHandler> {
     return this
   }
 
-  endPoint<TNewEndPoint extends keyof MessageHandler>(endPoint: TNewEndPoint): ATRIMessage<TNewEndPoint> {
+  endPoint<TNewEndPoint extends keyof MessageHandler>(endPoint: TNewEndPoint): ATRIMessage<TNewEndPoint, TConfig> {
     this.#endPoint = endPoint as unknown as TEndPoint
-    return this as unknown as ATRIMessage<TNewEndPoint>
+    return this as unknown as ATRIMessage<TNewEndPoint, TConfig>
   }
 
   priority(priority: number): this {
@@ -66,12 +69,12 @@ export class ATRIMessage<TEndPoint extends keyof MessageHandler> {
     return this
   }
 
-  callback(callback: (context: MessageContext<TEndPoint>, next: () => void) => MaybePromise<void>): this {
+  callback(callback: (context: MessageContext<TEndPoint, TConfig>, next: () => void) => MaybePromise<void>): this {
     this.#callback = callback
     return this
   }
 
-  build(): MessageEvent<TEndPoint> {
+  build(): MessageEvent<TEndPoint, TConfig> {
     return {
       type: 'message',
       pluginName: this.#pluginName,

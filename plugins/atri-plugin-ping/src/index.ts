@@ -27,11 +27,11 @@ export const pingCommander = yargs()
 
 export const p1ng = plugin.command('p1ng')
   .commander(pingCommander)
-  .callback(async ({ context, options, bot, logger }, next) => {
+  .callback(async ({ context, options, bot, logger, config }, next) => {
     next()
 
     logger.DEBUG('Received p1ng command with options:', options)
-    await bot.sendMsg(context, [Structs.text(options.reply ?? plugin.config.defaultReply)], { reply: false, at: false })
+    await bot.sendMsg(context, [Structs.text(options.reply ?? config.defaultReply)], { reply: false, at: false })
   })
 
 export async function handlePingCommand(reply?: string, defaultReply?: string): Promise<SendMessageSegment[]> {
@@ -40,10 +40,10 @@ export async function handlePingCommand(reply?: string, defaultReply?: string): 
 
 export const p2ng = plugin.command('p2ng')
   .commander(pingCommander)
-  .callback(async ({ context, options, bot, logger }, next) => {
+  .callback(async ({ context, options, bot, logger, config }, next) => {
     next()
 
-    const msg = await handlePingCommand(options.reply, plugin.config.defaultReply)
+    const msg = await handlePingCommand(options.reply, config.defaultReply)
     logger.DEBUG('Generated p2ng response:', msg)
 
     await bot.sendMsg(context, msg, { reply: false, at: false })

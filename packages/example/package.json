@@ -17,8 +17,8 @@
     "@atri-bot/plugin-ping": "workspace:*",
     "@atri-bot/plugin-proxy": "workspace:*",
     "@atri-bot/plugin-the-cake-is-a-lie": "workspace:*",
-    "@huan_kong/logger": "^2.0.3",
-    "node-napcat-ts": "^0.4.23",
+    "@huan_kong/logger": "^2.0.4",
+    "node-napcat-ts": "^0.4.24",
     "yargs": "^18.0.0"
   },
   "devDependencies": {

@@ -32,6 +32,9 @@ export interface ATRIConfig {
   maxFiles?: number
 
   disableATRIFlag?: boolean
+
+  name?: string
+  version?: string
 }
 
 export type ConfigItem<T extends object> = {
@@ -43,10 +46,13 @@ export type ConfigItem<T extends object> = {
   }
 }[keyof T]
 
-export interface PluginModule { [key: string]: Plugin<any> | ATRICommand<any, any> | ATRIMessage<any> | ATRINotice<any> | ATRIRequest<any> }
+export interface PluginModule { [key: string]: Plugin<any> | ATRICommand<any, any, any> | ATRIMessage<any, any> | ATRINotice<any, any> | ATRIRequest<any, any> }
 
 export class ATRI {
-  version = PackageJson.version
+  name: string
+  version: string
+
+  atriVersion = PackageJson.version
   config: ATRIConfig
   logger: Logger
   bot: Bot
@@ -71,7 +77,9 @@ export class ATRI {
   }
 
   constructor(config: ATRIConfig) {
-    this.config = config
+    this.config = { ...config, name: 'ATRI' }
+    this.name = config.name ?? 'ATRI'
+    this.version = config.version ?? '1.0.0'
     this.logger = createLogger('ATRI', {
       title: 'ATRI',
       level: config.logLevel,
@@ -169,19 +177,19 @@ export class ATRI {
       pluginName = pluginInstance.pluginName
 
       this.loggers[pluginName] = this.logger.clone({ title: pluginName })
-
-      this.plugins[pluginName] = pluginInstance
-      pluginInstance.inject(this, this.loggers[pluginName])
-      this.logger.INFO(`插件 ${pluginName} 安装成功`)
-
-      // 加载配置
       const config = await this.loadConfig(pluginName, pluginInstance.defaultConfig)
-      pluginInstance.setConfig(config)
-      this.logger.INFO(`插件 ${pluginName} 配置加载完成`)
+      this.plugins[pluginName] = pluginInstance
+      this.logger.INFO(`插件 ${pluginName} 安装成功`)
 
       // 执行安装函数
       if (pluginInstance.installHandler) {
-        await pluginInstance.installHandler()
+        await pluginInstance.installHandler({
+          config,
+          atri: this,
+          bot: this.bot,
+          ws: this.bot.ws,
+          logger: this.loggers[pluginName],
+        })
         this.logger.INFO(`插件 ${pluginName} 安装函数执行完成`)
       }
     }
@@ -203,7 +211,7 @@ export class ATRI {
         }
 
         if (variable.symbol === commandSymbol) {
-          const commandVariable = variable as ATRICommand<any, any>
+          const commandVariable = variable as ATRICommand<any, any, any>
           const event = commandVariable.build()
           this.bot.regCommandEvent(event)
           success = true
@@ -211,7 +219,7 @@ export class ATRI {
           continue
         }
         else if (variable.symbol === messageSymbol) {
-          const messageVariable = variable as ATRIMessage<any>
+          const messageVariable = variable as ATRIMessage<any, any>
           const event = messageVariable.build()
           this.bot.regMessageEvent(event)
           success = true
@@ -219,7 +227,7 @@ export class ATRI {
           continue
         }
         else if (variable.symbol === noticeSymbol) {
-          const noticeVariable = variable as ATRINotice<any>
+          const noticeVariable = variable as ATRINotice<any, any>
           const event = noticeVariable.build()
           this.bot.regNoticeEvent(event)
           success = true
@@ -227,7 +235,7 @@ export class ATRI {
           continue
         }
         else if (variable.symbol === requestSymbol) {
-          const requestVariable = variable as ATRIRequest<any>
+          const requestVariable = variable as ATRIRequest<any, any>
           const event = requestVariable.build()
           this.bot.regRequestEvent(event)
           success = true
@@ -267,7 +275,13 @@ export class ATRI {
     // 执行卸载函数
     if (plugin.uninstallHandler) {
       try {
-        await plugin.uninstallHandler()
+        await plugin.uninstallHandler({
+          config: this.configs[normalizePluginName(pluginName)],
+          atri: this,
+          bot: this.bot,
+          ws: this.bot.ws,
+          logger: this.loggers[pluginName],
+        })
         this.logger.INFO(`插件 ${pluginName} 卸载函数执行完成`)
       }
       catch (error) {

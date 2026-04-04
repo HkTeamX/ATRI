@@ -10,7 +10,7 @@ import type { NonEmptyArray } from '@/utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
-import { decodeUnicode, sortObjectArray } from '@/utils.js'
+import { decodeUnicode, normalizePluginName, sortObjectArray } from '@/utils.js'
 
 export type BotConfig = NCWebsocketOptions & {
   logLevel?: LogLevelType
@@ -48,6 +48,23 @@ export class Bot {
       ...(config.logLevel ? { level: config.logLevel } : {}),
     })
     this.ws = new NCWebsocket(config)
+  }
+
+  private createPluginContextHelpers(pluginName: string) {
+    const plugin = this.atri.plugins[pluginName]
+    if (!plugin) {
+      throw new Error(`插件 ${pluginName} 未安装，无法获取配置上下文`)
+    }
+
+    return {
+      atri: this.atri,
+      bot: this,
+      ws: this.ws,
+      config: this.atri.configs[normalizePluginName(pluginName)] ?? {},
+      logger: this.atri.loggers[pluginName],
+      refreshConfig: async () => await this.atri.loadConfig(pluginName, plugin.defaultConfig, true),
+      saveConfig: async (config: any) => await this.atri.saveConfig(pluginName, config),
+    }
   }
 
   async init() {
@@ -111,7 +128,10 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
+          Promise.resolve(event.callback({
+            context,
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -165,7 +185,11 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, options, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
+          Promise.resolve(event.callback({
+            context,
+            options,
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -210,7 +234,10 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
+          Promise.resolve(event.callback({
+            context,
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -256,7 +283,10 @@ export class Bot {
             resolveCurrentStep()
           }
 
-          Promise.resolve(event.callback({ context, atri: this.atri, bot: this, ws: this.ws, logger: this.atri.loggers[event.pluginName] }, next))
+          Promise.resolve(event.callback({
+            context,
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -390,12 +420,16 @@ export class Bot {
     context:
       | { message_type: 'private', user_id: number, message_id?: number }
       | { message_type: 'group', group_id: number, user_id?: number, message_id?: number },
-    message: SendMessageSegment[],
+    message: (SendMessageSegment | string)[] | string,
     { reply = true, at = true } = {},
   ) {
+    const parsedMessage = typeof message === 'string'
+      ? [Structs.text(message)]
+      : message.map(item => typeof item === 'string' ? Structs.text(item) : item)
+
     try {
       if (context.message_type === 'private') {
-        return await this.ws.send_private_msg({ user_id: context.user_id, message })
+        return await this.ws.send_private_msg({ user_id: context.user_id, message: parsedMessage })
       }
       else {
         const prefix: SendMessageSegment[] = []
@@ -405,8 +439,7 @@ export class Bot {
         if (at && context.user_id)
           prefix.push(Structs.at(context.user_id), Structs.text('\n'))
 
-        message = [...prefix, ...message]
-        return await this.ws.send_group_msg({ group_id: context.group_id, message })
+        return await this.ws.send_group_msg({ group_id: context.group_id, message: [...prefix, ...parsedMessage] })
       }
     }
     catch {
@@ -421,19 +454,23 @@ export class Bot {
     context:
       | { message_type: 'group', group_id: number }
       | { message_type: 'private', user_id: number },
-    message: NodeSegment[],
+    message: (NodeSegment | string)[] | string,
   ) {
+    const parsedMessage = typeof message === 'string'
+      ? [Structs.customNode([Structs.text(message)])]
+      : message.map(item => typeof item === 'string' ? Structs.customNode([Structs.text(item)]) : item)
+
     try {
       if (context.message_type === 'private') {
         return await this.ws.send_private_forward_msg({
           user_id: context.user_id,
-          message,
+          message: parsedMessage,
         })
       }
       else {
         return await this.ws.send_group_forward_msg({
           group_id: context.group_id,
-          message,
+          message: parsedMessage,
         })
       }
     }

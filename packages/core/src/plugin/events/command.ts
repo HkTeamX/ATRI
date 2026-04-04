@@ -6,16 +6,19 @@ import type { Bot } from '@/bot.js'
 import type { MaybePromise } from '@/utils.js'
 import yargs from 'yargs'
 
-export interface CommandContext<T extends keyof MessageHandler, K extends Argv> {
+export interface CommandContext<T extends keyof MessageHandler, K extends Argv, TConfig extends object> {
   context: MessageHandler[T]
   options: ReturnType<K['parseSync']>
+  config: TConfig
   atri: ATRI
   bot: Bot
   ws: Bot['ws']
   logger: Logger
+  refreshConfig: () => Promise<TConfig>
+  saveConfig: (config?: TConfig) => Promise<void>
 }
 
-export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler, K extends Argv = Argv> {
+export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler, K extends Argv = Argv, TConfig extends object = object> {
   type: 'command'
   endPoint?: T
   trigger: string | RegExp
@@ -25,12 +28,12 @@ export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHand
   hideInHelp?: boolean
   pluginName: string
   commander?: () => K
-  callback: (context: CommandContext<T, K>, next: () => void) => MaybePromise<void>
+  callback: (context: CommandContext<T, K, TConfig>, next: () => void) => MaybePromise<void>
 }
 
 export const commandSymbol = Symbol.for('atri_command')
 
-export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends Argv> {
+export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends Argv, TConfig extends object> {
   #pluginName: string
   #trigger: string | RegExp
   #endPoint: TEndPoint = 'message' as TEndPoint
@@ -39,7 +42,7 @@ export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends A
   #needAdmin?: boolean
   #hideInHelp?: boolean
   #commander: TArgv
-  #callback: (context: CommandContext<TEndPoint, TArgv>, next: () => void) => MaybePromise<void>
+  #callback: (context: CommandContext<TEndPoint, TArgv, TConfig>, next: () => void) => MaybePromise<void>
   symbol = commandSymbol
 
   constructor(pluginName: string, trigger: string | RegExp) {
@@ -49,9 +52,9 @@ export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends A
     this.#callback = () => {}
   }
 
-  endPoint<TNewEndPoint extends keyof MessageHandler>(endPoint: TNewEndPoint): ATRICommand<TNewEndPoint, TArgv> {
+  endPoint<TNewEndPoint extends keyof MessageHandler>(endPoint: TNewEndPoint): ATRICommand<TNewEndPoint, TArgv, TConfig> {
     this.#endPoint = endPoint as unknown as TEndPoint
-    return this as unknown as ATRICommand<TNewEndPoint, TArgv>
+    return this as unknown as ATRICommand<TNewEndPoint, TArgv, TConfig>
   }
 
   priority(priority: number): this {
@@ -74,17 +77,17 @@ export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends A
     return this
   }
 
-  commander<TNewArgv extends Argv>(commander: TNewArgv): ATRICommand<TEndPoint, TNewArgv> {
+  commander<TNewArgv extends Argv>(commander: TNewArgv): ATRICommand<TEndPoint, TNewArgv, TConfig> {
     this.#commander = commander as unknown as TArgv
-    return this as unknown as ATRICommand<TEndPoint, TNewArgv>
+    return this as unknown as ATRICommand<TEndPoint, TNewArgv, TConfig>
   }
 
-  callback(callback: (context: CommandContext<TEndPoint, TArgv>, next: () => void) => MaybePromise<void>): this {
+  callback(callback: (context: CommandContext<TEndPoint, TArgv, TConfig>, next: () => void) => MaybePromise<void>): this {
     this.#callback = callback
     return this
   }
 
-  build(): CommandEvent<TEndPoint, TArgv> {
+  build(): CommandEvent<TEndPoint, TArgv, TConfig> {
     return {
       type: 'command',
       pluginName: this.#pluginName,

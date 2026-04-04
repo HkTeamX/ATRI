@@ -1,5 +1,6 @@
 import type { Logger } from '@huan_kong/logger'
 import type { ATRI, ConfigItem } from '@/atri.js'
+import type { Bot } from '@/bot.js'
 import type { MaybePromise } from '@/utils.js'
 import { ATRICommand } from '@/plugin/events/command.js'
 import { ATRIMessage } from '@/plugin/events/message.js'
@@ -8,27 +9,33 @@ import { ATRIRequest } from '@/plugin/events/request.js'
 
 export const pluginSymbol = Symbol.for('atri_plugin')
 
+export interface PluginContext<TConfig extends object> {
+  config: TConfig
+  atri: ATRI
+  bot: Bot
+  ws: Bot['ws']
+  logger: Logger
+}
+
+export type PluginHandler<TConfig extends object> = (context: PluginContext<TConfig>) => MaybePromise<void>
+
 export class Plugin<TConfig extends object> {
   pluginName: string
-  config: TConfig
   defaultConfig?: ConfigItem<TConfig>[]
-  installHandler?: () => MaybePromise<void>
-  uninstallHandler?: () => MaybePromise<void>
-  atri!: ATRI
-  logger!: Logger
+  installHandler?: PluginHandler<TConfig>
+  uninstallHandler?: PluginHandler<TConfig>
   symbol = pluginSymbol
 
   constructor(pluginName: string) {
     this.pluginName = pluginName
-    this.config = {} as TConfig
   }
 
-  onInstall(handler: () => MaybePromise<void>) {
+  onInstall(handler: PluginHandler<TConfig>) {
     this.installHandler = handler
     return this
   }
 
-  onUninstall(handler: () => MaybePromise<void>) {
+  onUninstall(handler: PluginHandler<TConfig>) {
     this.uninstallHandler = handler
     return this
   }
@@ -38,41 +45,19 @@ export class Plugin<TConfig extends object> {
     return this
   }
 
-  setConfig(config: TConfig) {
-    this.config = config
-    return this
-  }
-
-  inject(atri: ATRI, logger: Logger) {
-    this.atri = atri
-    this.logger = logger
-  }
-
-  async refreshConfig() {
-    const config = await this.atri.loadConfig(this.pluginName, this.defaultConfig, true)
-    this.config = config
-    return config
-  }
-
-  async saveConfig(config: TConfig) {
-    this.config = config
-    await this.atri.saveConfig(this.pluginName, config)
-    return true
-  }
-
   command(trigger: string | RegExp) {
-    return new ATRICommand(this.pluginName, trigger)
+    return new ATRICommand<'message', any, TConfig>(this.pluginName, trigger)
   }
 
   message(trigger?: string | RegExp) {
-    return new ATRIMessage(this.pluginName, trigger)
+    return new ATRIMessage<'message', TConfig>(this.pluginName, trigger)
   }
 
   notice() {
-    return new ATRINotice(this.pluginName)
+    return new ATRINotice<'notice', TConfig>(this.pluginName)
   }
 
   request() {
-    return new ATRIRequest(this.pluginName)
+    return new ATRIRequest<'request', TConfig>(this.pluginName)
   }
 }
