@@ -1,12 +1,16 @@
 import type { Logger, LogLevelType } from '@huan_kong/logger'
 import type { MessageHandler, NCWebsocketOptions, NodeSegment, NoticeHandler, RequestHandler, SendMessageSegment } from 'node-napcat-ts'
 import type { Argv } from 'yargs'
-import type { ATRI } from './atri.js'
-import type { MaybePromise, NonEmptyArray } from './utils.js'
+import type { ATRI } from '@/atri.js'
+import type { CommandEvent } from '@/plugin/events/command.js'
+import type { MessageEvent } from '@/plugin/events/message.js'
+import type { NoticeEvent } from '@/plugin/events/notice.js'
+import type { RequestEvent } from '@/plugin/events/request.js'
+import type { NonEmptyArray } from '@/utils.js'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
-import { decodeUnicode, sortObjectArray } from './utils.js'
+import { decodeUnicode, normalizePluginName, sortObjectArray } from '@/utils.js'
 
 export type BotConfig = NCWebsocketOptions & {
   logLevel?: LogLevelType
@@ -14,65 +18,6 @@ export type BotConfig = NCWebsocketOptions & {
   adminId: NonEmptyArray<number>
   yargsLocale?: string
 }
-
-export interface CommandContext<T extends keyof MessageHandler, K extends Argv> {
-  context: MessageHandler[T]
-  options: ReturnType<K['parseSync']>
-}
-
-export interface CommandEvent<T extends keyof MessageHandler = keyof MessageHandler, K extends Argv = Argv> {
-  type: 'command'
-  endPoint?: T
-  trigger: string | RegExp
-  priority?: number
-  needReply?: boolean
-  needAdmin?: boolean
-  hideInHelp?: boolean
-  pluginName: string
-  commander?: () => K
-  callback: (context: CommandContext<T, K>) => MaybePromise<void | 'quit'>
-}
-
-export interface MessageContext<T extends keyof MessageHandler> {
-  context: MessageHandler[T]
-}
-
-export interface MessageEvent<T extends keyof MessageHandler = keyof MessageHandler> {
-  type: 'message'
-  endPoint?: T
-  trigger?: string | RegExp
-  priority?: number
-  needReply?: boolean
-  needAdmin?: boolean
-  pluginName: string
-  callback: (context: MessageContext<T>) => MaybePromise<void | 'quit'>
-}
-
-export interface NoticeContext<T extends keyof NoticeHandler> {
-  context: NoticeHandler[T]
-}
-
-export interface NoticeEvent<T extends keyof NoticeHandler = keyof NoticeHandler> {
-  type: 'notice'
-  endPoint?: T
-  priority?: number
-  pluginName: string
-  callback: (context: NoticeContext<T>) => MaybePromise<void | 'quit'>
-}
-
-export interface RequestContext<T extends keyof RequestHandler> {
-  context: RequestHandler[T]
-}
-
-export interface RequestEvent<T extends keyof RequestHandler = keyof RequestHandler> {
-  type: 'request'
-  endPoint?: T
-  priority?: number
-  pluginName: string
-  callback: (context: RequestContext<T>) => MaybePromise<void | 'quit'>
-}
-
-export type RegEventOptions = CommandEvent | MessageEvent | NoticeEvent | RequestEvent
 
 export interface BotEvents {
   command: CommandEvent[]
@@ -93,7 +38,7 @@ export class Bot {
     request: [],
   }
 
-  unloaders: { [key: string]: (() => void)[] } = {}
+  unloaders: Record<string, (() => void)[]> = {}
 
   constructor(atri: ATRI, config: BotConfig) {
     this.atri = atri
@@ -103,6 +48,23 @@ export class Bot {
       ...(config.logLevel ? { level: config.logLevel } : {}),
     })
     this.ws = new NCWebsocket(config)
+  }
+
+  private createPluginContextHelpers(pluginName: string) {
+    const plugin = this.atri.plugins[pluginName]
+    if (!plugin) {
+      throw new Error(`插件 ${pluginName} 未安装，无法获取配置上下文`)
+    }
+
+    return {
+      atri: this.atri,
+      bot: this,
+      ws: this.ws,
+      config: this.atri.configs[normalizePluginName(pluginName)] ?? {},
+      logger: this.atri.loggers[pluginName],
+      refreshConfig: async () => await this.atri.loadConfig(pluginName, plugin.defaultConfig, true),
+      saveConfig: async (config: any) => await this.atri.saveConfig(pluginName, config),
+    }
   }
 
   async init() {
@@ -152,15 +114,29 @@ export class Bot {
           !endPoint.includes(event.endPoint ?? 'message')
           || (event.needReply && !isReply)
           || (event.needAdmin && !isAdmin)
-          || (event.trigger && !(typeof event.trigger === 'string' ? context.raw_message.includes(event.trigger) : event.trigger.test(context.raw_message)))
+          || (event.trigger && !(typeof event.trigger === 'string' ? context.raw_message.startsWith(event.trigger) : event.trigger.test(context.raw_message)))
         ) {
           continue
         }
 
         try {
-          const result = await event.callback({ context })
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
 
-          if (result === 'quit') {
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({
+            context,
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
+            .finally(() => resolveCurrentStep())
+
+          await stepSignal
+
+          if (!nextCalled) {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
@@ -201,12 +177,24 @@ export class Bot {
             ? event.commander().fail(false).parseSync(args)
             : { _: [], $0: '' }
 
-          const result = await event.callback({
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({
             context,
             options,
-          })
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
+            .finally(() => resolveCurrentStep())
 
-          if (result === 'quit') {
+          await stepSignal
+
+          if (!nextCalled) {
             this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
@@ -230,25 +218,39 @@ export class Bot {
 
     this.ws.on('request', async (context) => {
       this.logger.DEBUG('收到请求:', context)
-      const endpoint = `request.${context.request_type}.${'sub_type' in context ? context.sub_type : ''}`
+      const endPoint = `request.${context.request_type}.${'sub_type' in context ? context.sub_type : ''}`
 
       for (const event of this.events.request) {
-        if (!endpoint.includes(event.endPoint ?? 'request')) {
+        if (!endPoint.includes(event.endPoint ?? 'request')) {
           continue
         }
 
         try {
-          const result = await event.callback({ context })
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
 
-          if (result === 'quit') {
-            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({
+            context,
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
+            .finally(() => resolveCurrentStep())
+
+          await stepSignal
+
+          if (!nextCalled) {
+            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
         }
         catch (error) {
-          this.logger.ERROR(`插件 ${event.pluginName} ${endpoint} 事件处理失败:`, error)
+          this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error)
           await this.sendMsg({ message_type: 'private', user_id: this.config.adminId[0] }, [
-            Structs.text(`插件 ${event.pluginName} ${endpoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
+            Structs.text(`插件 ${event.pluginName} ${endPoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
           ])
         }
       }
@@ -257,33 +259,47 @@ export class Bot {
     this.ws.on('notice', async (context) => {
       this.logger.DEBUG('收到通知:', context)
 
-      let endpoint = `notice.${context.notice_type}.${'sub_type' in context ? context.sub_type : ''}`
+      let endPoint = `notice.${context.notice_type}.${'sub_type' in context ? context.sub_type : ''}`
       if (context.notice_type === 'notify') {
         if (context.sub_type === 'input_status') {
-          endpoint += `.${context.group_id !== 0 ? 'group' : 'friend'}`
+          endPoint += `.${context.group_id !== 0 ? 'group' : 'friend'}`
         }
         else if (context.sub_type === 'poke') {
-          endpoint += `.${'group_id' in context ? 'group' : 'friend'}`
+          endPoint += `.${'group_id' in context ? 'group' : 'friend'}`
         }
       }
 
       for (const event of this.events.notice) {
-        if (!endpoint.includes(event.endPoint ?? 'notice')) {
+        if (!endPoint.includes(event.endPoint ?? 'notice')) {
           continue
         }
 
         try {
-          const result = await event.callback({ context })
+          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
 
-          if (result === 'quit') {
-            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endpoint} 事件`)
+          let nextCalled = false
+          const next = () => {
+            nextCalled = true
+            resolveCurrentStep()
+          }
+
+          Promise.resolve(event.callback({
+            context,
+            ...this.createPluginContextHelpers(event.pluginName),
+          }, next))
+            .finally(() => resolveCurrentStep())
+
+          await stepSignal
+
+          if (!nextCalled) {
+            this.logger.DEBUG(`插件 ${event.pluginName} 请求提前终止 ${endPoint} 事件`)
             break
           }
         }
         catch (error) {
-          this.logger.ERROR(`插件 ${event.pluginName} ${endpoint} 事件处理失败:`, error)
+          this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error)
           await this.sendMsg({ message_type: 'private', user_id: this.config.adminId[0] }, [
-            Structs.text(`插件 ${event.pluginName} ${endpoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
+            Structs.text(`插件 ${event.pluginName} ${endPoint} 事件处理失败: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`),
           ])
         }
       }
@@ -322,20 +338,26 @@ export class Bot {
   }
 
   regCommandEvent<T extends keyof MessageHandler, K extends Argv>(_event: Omit<CommandEvent<T, K>, 'type'>) {
-    const event = { ..._event, type: 'command' } as CommandEvent
-    if (event.commander) {
+    if (_event.commander) {
       // 如果 commander 不是函数，则包装成函数
-      if (typeof event.commander !== 'function') {
-        event.commander = (commander => () => commander)(event.commander)
+      if (typeof _event.commander !== 'function') {
+        _event.commander = (commander => () => commander)(_event.commander)
       }
 
-      event.commander()
+      _event.commander()
         .exitProcess(false)
-        .usage(`用法: ${decodeUnicode(event.trigger.toString())} [选项]`)
+        .usage(`用法: ${decodeUnicode(_event.trigger.toString())} [选项]`)
         .locale(this.config.yargsLocale ?? 'zh_CN')
         .help(false)
         .version(false)
     }
+
+    if (_event.trigger instanceof RegExp && (_event.trigger.flags.includes('g') || _event.trigger.flags.includes('y'))) {
+      _event.trigger = new RegExp(_event.trigger.source, _event.trigger.flags.replace('g', '').replace('y', ''))
+      this.logger.WARN(`插件 ${_event.pluginName} 注册了一个全局正则表达式触发器, 这可能会导致无法正确匹配的问题:`, decodeUnicode(_event.trigger.toString()))
+    }
+
+    const event = { ..._event, type: 'command' } as CommandEvent
 
     this.events.command = sortObjectArray([...this.events.command, event], 'priority', 'down')
     const unload = () => {
@@ -398,12 +420,16 @@ export class Bot {
     context:
       | { message_type: 'private', user_id: number, message_id?: number }
       | { message_type: 'group', group_id: number, user_id?: number, message_id?: number },
-    message: SendMessageSegment[],
+    message: (SendMessageSegment | string)[] | string,
     { reply = true, at = true } = {},
   ) {
+    const parsedMessage = typeof message === 'string'
+      ? [Structs.text(message)]
+      : message.map(item => typeof item === 'string' ? Structs.text(item) : item)
+
     try {
       if (context.message_type === 'private') {
-        return await this.ws.send_private_msg({ user_id: context.user_id, message })
+        return await this.ws.send_private_msg({ user_id: context.user_id, message: parsedMessage })
       }
       else {
         const prefix: SendMessageSegment[] = []
@@ -413,8 +439,7 @@ export class Bot {
         if (at && context.user_id)
           prefix.push(Structs.at(context.user_id), Structs.text('\n'))
 
-        message = [...prefix, ...message]
-        return await this.ws.send_group_msg({ group_id: context.group_id, message })
+        return await this.ws.send_group_msg({ group_id: context.group_id, message: [...prefix, ...parsedMessage] })
       }
     }
     catch {
@@ -429,19 +454,23 @@ export class Bot {
     context:
       | { message_type: 'group', group_id: number }
       | { message_type: 'private', user_id: number },
-    message: NodeSegment[],
+    message: (NodeSegment | string)[] | string,
   ) {
+    const parsedMessage = typeof message === 'string'
+      ? [Structs.customNode([Structs.text(message)])]
+      : message.map(item => typeof item === 'string' ? Structs.customNode([Structs.text(item)]) : item)
+
     try {
       if (context.message_type === 'private') {
         return await this.ws.send_private_forward_msg({
           user_id: context.user_id,
-          message,
+          message: parsedMessage,
         })
       }
       else {
         return await this.ws.send_group_forward_msg({
           group_id: context.group_id,
-          message,
+          message: parsedMessage,
         })
       }
     }

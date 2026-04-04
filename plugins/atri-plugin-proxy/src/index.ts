@@ -2,33 +2,41 @@ import { Plugin } from '@atri-bot/core'
 import proxy from '@huan_kong/node-global-proxy'
 import PackageJson from '../package.json' with { type: 'json' }
 
-export type ProxyConfig
-  = | { enable: false }
-    | {
-      enable: true
-      proxy: {
-        http: string
-        https: string
-      }
-    }
+export interface ProxyConfig {
+  enable: boolean
+  proxy: {
+    http: string
+    https: string
+  }
+}
 
-export const plugin = new Plugin(PackageJson.name)
-  .setDefaultConfig<ProxyConfig>({
-    enable: false,
-  })
-  .onInstall(({ config }) => {
-    if (!config.enable) {
-      return
-    }
-
-    if (!config.proxy?.http || !config.proxy?.https) {
-      console.error('代理配置不完整，请检查配置项 proxy.http 和 proxy.https 是否正确')
+export const plugin = new Plugin<ProxyConfig>(PackageJson.name)
+  .setDefaultConfig([
+    {
+      key: 'enable',
+      val: false,
+      comment: '是否启用全局代理',
+    },
+    {
+      key: 'proxy',
+      val: {
+        http: '',
+        https: '',
+      },
+      comment: '代理配置',
+    },
+  ])
+  .onInstall(({ config, logger }) => {
+    if (!config.enable || config.proxy.http === '' || config.proxy.https === '') {
+      logger.INFO('全局代理未启用')
       return
     }
 
     proxy.setConfig(config.proxy)
     proxy.start()
+    logger.INFO('全局代理已启用')
   })
-  .onUninstall(() => {
+  .onUninstall(({ logger }) => {
     proxy.stop()
+    logger.INFO('全局代理已停用')
   })

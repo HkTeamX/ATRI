@@ -16,13 +16,23 @@ export const plugin = new Plugin('插件名')
 
 ``` ts
 export const plugin = new Plugin('插件名')
-  .onInstall(({ event }) => {
-    // 简单分为四大类, 具体每个端点可以通过endPoint选项来配置
-    event.regCommandEvent({})
-    event.regMessageEvent({})
-    event.regNoticeEvent({})
-    event.regRequestEvent({})
+  .onInstall(() => {
+    // 可以编写部分逻辑
   })
+  .onUninstall(() => {
+    // 卸载时触发
+  })
+
+// 事件简单分为四大类, 具体每个端点可以通过endPoint选项来配置
+// 更多参数配置均为链式调用
+
+export const command = plugin
+  // 创建一个command
+  .command('trigger')
+
+export const message = plugin.message('可选trigger')
+export const notice = plugin.notice()
+export const request = plugin.request()
 ```
 
 其中每个具体函数的类型:
@@ -92,56 +102,7 @@ interface RequestEvent<T extends keyof RequestHandler = keyof RequestHandler> {
 }
 ```
 
-## 3.插件运行时上下文
-
-这里的 `context` 是使用 `define` 函数设置的
-
-`define` 函数支持基础类型和函数返回, 如果有需要还可以通过泛型指定类型
-
-``` ts
-export const plugin = new Plugin('上下文插件')
-  .define('hello', 'world')
-  .define('fn', () => 'aa')
-  .define('db', async () => {
-    return Promise.resolve('123')
-  })
-  .define('obj', (plugin) => {
-    // 当然还支持更高级的功能, 比如这里会接收到 所有的上下文, 插件名, 配置信息
-    return {
-      pluginName: plugin.pluginName,
-      hello: plugin.context.hello,
-    }
-  })
-  .onInstall(({ context }) => {
-    console.log(context)
-  })
-```
-
-``` ts
-export interface PluginRuntimeContext<TContext extends object, TConfig extends object> {
-  context: TContext
-  config: TConfig
-  defaultConfig: TConfig
-  pluginName: string
-
-  plugin: Plugin<TContext, TConfig>
-  atri: ATRI
-  bot: ATRI['bot']
-  ws: ATRI['bot']['ws']
-  logger: ATRI['logger']
-  refreshConfig: () => Promise<void>
-  saveConfig: (config?: TConfig) => Promise<void>
-
-  event: {
-    regMessageEvent: <K extends keyof MessageHandler>(event: Omit<MessageEvent<K>, 'type' | 'pluginName'>) => () => void
-    regCommandEvent: <K extends keyof MessageHandler, U extends Argv>(event: Omit<CommandEvent<K, U>, 'type' | 'pluginName'>) => () => void
-    regNoticeEvent: <K extends keyof NoticeHandler>(event: Omit<NoticeEvent<K>, 'type' | 'pluginName'>) => () => void
-    regRequestEvent: <K extends keyof RequestHandler>(event: Omit<RequestEvent<K>, 'type' | 'pluginName'>) => () => void
-  }
-}
-```
-
-## 4.管理插件配置
+## 3.管理插件配置
 
 使用 `setDefaultConfig` 来设置插件的默认配置文件, 如果本地的 `configDir` 下有对应插件的配置文件, 他就会自动去读取, 如果没有那就会使用 `defaultConfig` 去创建, 如果两个配置文件有重叠, 优先本地配置文件
 
@@ -153,12 +114,19 @@ const config = {
 ```
 
 ``` ts
-const plugin = new Plugin('bot')
-  .setDefaultConfig({
-    reply: 'pong'
-  })
-  .onInstall(({ config }) => {
-    console.log(config)
+interface Config {
+  reply: string
+}
+
+const plugin = new Plugin<Config>('bot')
+  .setDefaultConfig([{
+    key: 'reply',
+    val: 'pong',
+    comment: '添加注释',
+    place: 'top' // 注释位置
+  }])
+  .onInstall(() => {
+    console.log(plugin.config)
   })
 ```
 
@@ -167,11 +135,15 @@ const plugin = new Plugin('bot')
 `bot` 提供了常用的消息与用户工具，方便在插件内直接调用：
 
 ::: tip
-`bot` 在使用 `onInstall` 注册的时候从上下文提取
+`bot` 在使用 `callback` 注册的时候从上下文提取
 
 ``` ts
 const plugin = new Plugin('bot')
-  .onInstall(({ bot }) => {
+
+export const command = plugin
+  // 创建一个command
+  .command('trigger')
+  .callback(({ bot }) => {
     console.log(bot)
   })
 ```

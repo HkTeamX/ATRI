@@ -1,34 +1,19 @@
-import type { ATRI } from '@atri-bot/core'
 import type { AnyRelations, DrizzleConfig, EmptyRelations } from 'drizzle-orm'
 import type { MigrationConfig } from 'drizzle-orm/migrator'
-import { Logger } from '@huan_kong/logger'
+import { getLogger, Logger } from '@huan_kong/logger'
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/bun-sql'
 import { migrate } from 'drizzle-orm/bun-sql/migrator'
 
-import { timestamp } from 'drizzle-orm/pg-core'
-
-export const timestamps = {
-  created_at: timestamp().notNull().defaultNow(),
-  updated_at: timestamp()
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-}
-
 let initDbPluginOptions: InitDbPluginOptions | null = null
-let logger: ATRI['logger'] | null = null
+const logger = (getLogger('ATRI') ?? new Logger({ title: 'ATRI' })).clone({ title: 'atri-lib-db' })
 
 export interface InitDbPluginOptions {
   connectString: string
   config?: DrizzleConfig
 }
 
-export async function initDb(atri: ATRI, options: InitDbPluginOptions) {
-  logger = atri.logger.clone({
-    title: 'DbPlugin-init',
-  })
-
+export async function initDb(options: InitDbPluginOptions) {
   try {
     const db = drizzle(options.connectString, options.config ?? {})
     await db.execute(sql`SELECT 1;`)
@@ -55,14 +40,10 @@ export async function useDb<
     throw new Error('请先通过 initDb 初始化数据库连接')
   }
 
-  const innerLogger = logger?.clone({
-    title: 'DbPlugin',
-  }) ?? new Logger({ title: 'DbPlugin' })
-
   const Drizzle = drizzle(
     initDbPluginOptions.connectString,
     {
-      logger: { logQuery: (query, params) => innerLogger?.DEBUG('执行数据库查询:', { query, params }) },
+      logger: { logQuery: (query, params) => logger.DEBUG('执行数据库查询:', { query, params }) },
       ...initDbPluginOptions.config,
       ...options.config,
     } as DrizzleConfig<TSchema, TRelations>,

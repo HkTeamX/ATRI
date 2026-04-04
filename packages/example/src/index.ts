@@ -28,12 +28,10 @@ const atri = new ATRI({
 })
 
 ;(async () => {
-  await Promise.all([
-    atri.installPlugin('@atri-bot/plugin-ping'),
-    atri.installPlugin('@atri-bot/plugin-help'),
-    atri.installPlugin('@atri-bot/plugin-proxy'),
-    atri.installPlugin('@atri-bot/plugin-the-cake-is-a-lie'),
-  ])
+  await atri.installPlugin('@atri-bot/plugin-ping')
+  await atri.installPlugin('@atri-bot/plugin-help')
+  await atri.installPlugin('@atri-bot/plugin-proxy')
+  await atri.installPlugin('@atri-bot/plugin-the-cake-is-a-lie')
 
   await atri.init()
 })()

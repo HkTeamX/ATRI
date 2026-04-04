@@ -1,9 +1,11 @@
-import type { ATRI } from '@atri-bot/core'
 import type { Input, KyInstance, Options } from 'ky'
 import fs from 'node:fs'
 import path from 'node:path'
 import stream from 'node:stream'
+import { getLogger, Logger } from '@huan_kong/logger'
 import ky from 'ky'
+
+const logger = (getLogger('ATRI') ?? new Logger({ title: 'ATRI' })).clone({ title: 'atri-lib-request' })
 
 export interface DownloadFileOptions extends Options {
   filename?: string
@@ -22,11 +24,7 @@ export function extractFilenameFromHeader(disposition: string) {
   return decodeURIComponent(match[1] || match[2])
 }
 
-export function useRequest(atri: ATRI, config?: Options): KyInstance {
-  const logger = atri.logger.clone({
-    title: 'RequestLib',
-  })
-
+export function useRequest(config?: Options): KyInstance {
   const defaultKyConfig: Options = {
     hooks: {
       beforeRequest: [

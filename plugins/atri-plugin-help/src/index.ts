@@ -4,6 +4,8 @@ import { Structs } from 'node-napcat-ts'
 import yargs from 'yargs'
 import PackageJson from '../package.json' with { type: 'json' }
 
+export const plugin = new Plugin(PackageJson.name)
+
 export const helpCommander = yargs()
   .option('command', {
     alias: 'c',
@@ -23,8 +25,6 @@ export const helpCommander = yargs()
     default: 8,
   })
 
-export const helpRegexp = /help|帮助/
-
 export async function handleFindCommand(commandEvents: CommandEvent[], command: string) {
   const matchedCommand = commandEvents.find((cmd) => {
     if (typeof cmd.trigger === 'string') {
@@ -36,19 +36,21 @@ export async function handleFindCommand(commandEvents: CommandEvent[], command: 
   })
 
   if (!matchedCommand || !matchedCommand.commander) {
-    return [Structs.text('未找到该命令的帮助信息')]
+    return '未找到该命令的帮助信息'
   }
 
   const description = await matchedCommand.commander().getHelp()
-  return [Structs.text(description)]
+  return description
 }
 
 export async function handleCommandList(
   commandEvents: CommandEvent[],
   page: number,
   size: number,
-  version: string,
   prefix: string,
+  name: string,
+  version: string,
+  atriVersion: string,
 ) {
   const commandList = commandEvents
     .filter(cmd => !cmd.hideInHelp)
@@ -56,32 +58,26 @@ export async function handleCommandList(
     .map((cmdEvent, index) => `${index + 1}. ${decodeUnicode(cmdEvent.trigger.toString())}`)
 
   return [
-    Structs.text(`ATRI Bot v${version} - 命令列表 (第 ${page} 页)\n`),
+    Structs.text(`${name} v${version} - 命令列表 (第 ${page} 页, 共 ${Math.ceil(commandEvents.length / size)} 页)\n`),
+    Structs.text(`Powered by ATRI v${atriVersion}\n`),
     Structs.text(`使用 "${prefix}help -p <页码> -s <每页条数>" 来翻页\n`),
     Structs.text(`使用 "${prefix}help -c <命令>" 查看指定命令的帮助信息\n`),
     Structs.text(commandList.join('\n')),
   ]
 }
 
-export const plugin = new Plugin(PackageJson.name)
-  .onInstall(({ event, bot, atri }) => {
-    event.regCommandEvent({
-      trigger: helpRegexp,
-      commander: helpCommander,
-      priority: 9999,
-      callback: async ({ context, options }) => {
-        const { page, size, command } = options
+export const help = plugin.command(/help|帮助/)
+  .priority(9999)
+  .commander(helpCommander)
+  .callback(async ({ context, options, bot, atri }) => {
+    const { page, size, command } = options
 
-        if (command) {
-          const msg = await handleFindCommand(bot.events.command, command)
-          await bot.sendMsg(context, msg)
-          return 'quit' as const
-        }
+    if (command) {
+      const msg = await handleFindCommand(bot.events.command, command)
+      await bot.sendMsg(context, msg)
+      return
+    }
 
-        const msg = await handleCommandList(bot.events.command, page, size, atri.version, bot.config.prefix[0])
-        await bot.sendMsg(context, msg)
-
-        return 'quit' as const
-      },
-    })
+    const msg = await handleCommandList(bot.events.command, page, size, bot.config.prefix[0], atri.name, atri.version, atri.atriVersion)
+    await bot.sendMsg(context, msg)
   })
