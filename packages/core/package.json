@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/core",
   "type": "module",
-  "version": "2.3.7",
+  "version": "2.3.9",
   "description": "QQBOT TypeScript framework",
   "author": "huankong233",
   "license": "MIT",

@@ -120,7 +120,7 @@ export class Bot {
         }
 
         try {
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -132,6 +132,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -177,7 +178,7 @@ export class Bot {
             ? event.commander().fail(false).parseSync(args)
             : { _: [], $0: '' }
 
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -190,6 +191,7 @@ export class Bot {
             options,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -226,7 +228,7 @@ export class Bot {
         }
 
         try {
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -238,6 +240,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -275,7 +278,7 @@ export class Bot {
         }
 
         try {
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -287,6 +290,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal

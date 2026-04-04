@@ -53,7 +53,6 @@ export async function handleCommandList(
   atriVersion: string,
 ) {
   const commandList = commandEvents
-    .filter(cmd => !cmd.hideInHelp)
     .slice((page - 1) * size, page * size)
     .map((cmdEvent, index) => `${index + 1}. ${decodeUnicode(cmdEvent.trigger.toString())}`)
 
@@ -72,12 +71,14 @@ export const help = plugin.command(/help|帮助/)
   .callback(async ({ context, options, bot, atri }) => {
     const { page, size, command } = options
 
+    const commands = bot.events.command.filter(cmd => cmd.needAdmin ? bot.config.adminId.includes(context.user_id) : true)
+
     if (command) {
-      const msg = await handleFindCommand(bot.events.command, command)
+      const msg = await handleFindCommand(commands, command)
       await bot.sendMsg(context, msg)
       return
     }
 
-    const msg = await handleCommandList(bot.events.command, page, size, bot.config.prefix[0], atri.name, atri.version, atri.atriVersion)
+    const msg = await handleCommandList(commands.filter(cmd => !cmd.hideInHelp), page, size, bot.config.prefix[0], atri.name, atri.version, atri.atriVersion)
     await bot.sendMsg(context, msg)
   })
