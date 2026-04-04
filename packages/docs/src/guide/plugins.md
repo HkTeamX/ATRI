@@ -125,8 +125,8 @@ const plugin = new Plugin<Config>('bot')
     comment: '添加注释',
     place: 'top' // 注释位置
   }])
-  .onInstall(() => {
-    console.log(plugin.config)
+  .onInstall(({ config }) => {
+    console.log(config)
   })
 ```
 
