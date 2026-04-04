@@ -120,7 +120,7 @@ export class Bot {
         }
 
         try {
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -132,7 +132,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
-            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -178,7 +178,7 @@ export class Bot {
             ? event.commander().fail(false).parseSync(args)
             : { _: [], $0: '' }
 
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -191,7 +191,7 @@ export class Bot {
             options,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
-            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -228,7 +228,7 @@ export class Bot {
         }
 
         try {
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -240,7 +240,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
-            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -278,7 +278,7 @@ export class Bot {
         }
 
         try {
-          const { promise: stepSignal, resolve: resolveCurrentStep } = Promise.withResolvers<void>()
+          const { promise: stepSignal, resolve: resolveCurrentStep, reject: rejectCurrentStep } = Promise.withResolvers<void>()
 
           let nextCalled = false
           const next = () => {
@@ -290,7 +290,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
-            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
+            .catch(error => rejectCurrentStep(error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal

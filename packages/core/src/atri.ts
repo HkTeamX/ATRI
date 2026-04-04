@@ -377,7 +377,8 @@ export class ATRI {
 
     Object.entries(config).forEach(([key, val]) => {
       doc.set(key, val)
-      if (this.configs?.[pluginName]?.[key]) {
+
+      if (Object.hasOwn(this.configs, pluginName)) {
         this.configs[pluginName][key] = val
       }
     })
