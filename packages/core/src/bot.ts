@@ -7,6 +7,7 @@ import type { MessageEvent } from '@/plugin/events/message.js'
 import type { NoticeEvent } from '@/plugin/events/notice.js'
 import type { RequestEvent } from '@/plugin/events/request.js'
 import type { NonEmptyArray } from '@/utils.js'
+import EventEmitter from 'node:events'
 import process from 'node:process'
 import { LogLevel } from '@huan_kong/logger'
 import { NCWebsocket, Structs } from 'node-napcat-ts'
@@ -26,6 +27,21 @@ export interface BotEvents {
   request: RequestEvent[]
 }
 
+export type ManualContext
+  = | { message_type: 'private', user_id: number, message_id?: number }
+    | { message_type: 'group', group_id: number, user_id?: number, message_id?: number }
+
+export interface UseMessageOptions {
+  /** 超时时间 */
+  timeout?: number
+  /** 是否需要自动回复 */
+  needReply?: boolean
+  /** 回复的内容 */
+  replyMsg?: string | (SendMessageSegment | string)[]
+  /** 超时是否抛出 */
+  throwOnTimeout?: boolean
+}
+
 export class Bot {
   atri: ATRI
   config: BotConfig
@@ -37,6 +53,10 @@ export class Bot {
     notice: [],
     request: [],
   }
+
+  //          连续对话专用
+  conversationEvent = new EventEmitter()
+  isInConversation = new Set<string>()
 
   unloaders: Record<string, (() => void)[]> = {}
 
@@ -94,6 +114,12 @@ export class Bot {
     this.ws.on('message', async (context) => {
       if (context.message.length === 0) {
         this.logger.DEBUG('收到空消息, 已跳过处理流程:', context)
+        return
+      }
+
+      if (this.isInConversation.has(this.getIdentifier(context))) {
+        this.conversationEvent.emit(`ctx:${this.getIdentifier(context)}`, context)
+        this.logger.DEBUG('当前消息处于连续对话中, 已跳过处理流程:', context)
         return
       }
 
@@ -417,13 +443,56 @@ export class Bot {
     return unload
   }
 
+  private getIdentifier(context: ManualContext) {
+    return `${context.user_id}@${'group_id' in context ? context.group_id : 'private'}`
+  }
+
+  /**
+   * 监听下一次消息事件, 用于实现连续对话功能
+   */
+  async useMessage<T extends MessageHandler[keyof MessageHandler]>(
+    context: T,
+    options: UseMessageOptions = {},
+  ): Promise<null | T> {
+    const identifier = this.getIdentifier(context)
+    this.isInConversation.add(identifier)
+
+    return new Promise((resolve, reject) => {
+      let timeoutId: NodeJS.Timeout | number = 0
+
+      const handler = (ctx: T) => {
+        this.isInConversation.delete(identifier)
+        clearTimeout(timeoutId)
+        resolve(ctx)
+      }
+
+      timeoutId = setTimeout(async () => {
+        this.isInConversation.delete(identifier)
+        clearTimeout(timeoutId)
+
+        if (options.needReply !== false) {
+          await this.sendMsg(context, options.replyMsg ?? '当前对话已超时')
+        }
+
+        this.conversationEvent.off(`ctx:${identifier}`, handler)
+        if (options.throwOnTimeout) {
+          reject(new Error(`监听消息超时: ${identifier}`))
+        }
+        else {
+          this.logger.DEBUG(`监听消息超时: ${identifier}`)
+          resolve(null)
+        }
+      }, options.timeout ?? 1000 * 60)
+
+      this.conversationEvent.once(`ctx:${identifier}`, handler)
+    })
+  }
+
   /**
    * 发送普通消息
    */
   async sendMsg(
-    context:
-      | { message_type: 'private', user_id: number, message_id?: number }
-      | { message_type: 'group', group_id: number, user_id?: number, message_id?: number },
+    context: ManualContext,
     message: (SendMessageSegment | string)[] | string,
     { reply = true, at = true } = {},
   ) {

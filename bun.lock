@@ -38,7 +38,7 @@
     },
     "packages/core": {
       "name": "@atri-bot/core",
-      "version": "2.3.7",
+      "version": "2.4.1",
       "dependencies": {
         "@huan_kong/logger": "^2.0.4",
         "fs-extra": "^11.3.4",
@@ -67,25 +67,25 @@
         "@atri-bot/plugin-ping": "workspace:*",
         "@atri-bot/plugin-proxy": "workspace:*",
         "@atri-bot/plugin-the-cake-is-a-lie": "workspace:*",
-        "@huan_kong/logger": "latest",
-        "node-napcat-ts": "latest",
-        "yargs": "latest",
-      },
-      "devDependencies": {
-        "@types/yargs": "latest",
-        "nodemon": "latest",
-      },
-    },
-    "plugins/atri-plugin-help": {
-      "name": "@atri-bot/plugin-help",
-      "version": "2.3.2",
-      "dependencies": {
-        "@atri-bot/core": "^2.3.6",
+        "@huan_kong/logger": "^2.0.4",
         "node-napcat-ts": "^0.4.24",
         "yargs": "^18.0.0",
       },
       "devDependencies": {
         "@types/yargs": "^17.0.35",
+        "nodemon": "^3.1.14",
+      },
+    },
+    "plugins/atri-plugin-help": {
+      "name": "@atri-bot/plugin-help",
+      "version": "2.4.1",
+      "dependencies": {
+        "@atri-bot/core": "latest",
+        "node-napcat-ts": "latest",
+        "yargs": "latest",
+      },
+      "devDependencies": {
+        "@types/yargs": "latest",
       },
     },
     "plugins/atri-plugin-ping": {
@@ -1385,6 +1385,8 @@
     "yocto-queue": ["yocto-queue@0.1.0", "", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
+
+    "@atri-bot/plugin-help/@atri-bot/core": ["@atri-bot/core@2.4.1", "", { "dependencies": { "@huan_kong/logger": "^2.0.4", "fs-extra": "^11.3.4", "node-napcat-ts": "^0.4.24", "yaml": "^2.8.3", "yargs": "^18.0.0" } }, "sha512-rjJ4L0xZ0F+czrs8KwypHMTRYIKiCwA/E0AFqx3rI/gmHAFLSnrhZaEx3NLn9yqu3USxhVEJUXl7XOuVwRts/w=="],
 
     "@babel/types/@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@8.0.0-rc.3", "", {}, "sha512-8AWCJ2VJJyDFlGBep5GpaaQ9AAaE/FjAcrqI7jyssYhtL7WGV0DOKpJsQqM037xDbpRLHXsY8TwU7zDma7coOw=="],
 
