@@ -32,13 +32,13 @@ export const helpCommander = yargs()
     default: false,
   })
 
-export interface handleFindCommandOptions {
+export interface HandleFindCommandOptions {
   commandList: CommandEvent[]
   command: string
   isAdmin: boolean
 }
 
-export async function handleFindCommand(options: handleFindCommandOptions) {
+export async function handleFindCommand(options: HandleFindCommandOptions) {
   const { commandList, command, isAdmin } = options
 
   const matchedCommand = commandList
@@ -57,7 +57,7 @@ export async function handleFindCommand(options: handleFindCommandOptions) {
   return description
 }
 
-export interface handleCommandListOptions {
+export interface HandleCommandListOptions {
   commandList: CommandEvent[]
   isAdmin: boolean
   page: number
@@ -69,18 +69,18 @@ export interface handleCommandListOptions {
   showHelp?: boolean
 }
 
-export async function handleCommandList(options: handleCommandListOptions) {
+export async function handleCommandList(options: HandleCommandListOptions) {
   const { commandList, isAdmin, page, size, prefix, name, version, atriVersion, showHelp = true } = options
 
-  const filtedCommandList = commandList
+  const filteredCommandList = commandList
     .filter(cmd => cmd.hideInHelp ? false : (cmd.needAdmin ? isAdmin : true))
 
-  const paginatedCommandList = filtedCommandList
+  const paginatedCommandList = filteredCommandList
     .slice((page - 1) * size, page * size)
     .map((cmdEvent, index) => `${index + 1}. ${decodeUnicode(cmdEvent.trigger.toString())}`)
 
   return [
-    Structs.text(`${name} v${version} - 命令列表 (第 ${page} 页, 共 ${Math.ceil(filtedCommandList.length / size)} 页)\n`),
+    Structs.text(`${name} v${version} - 命令列表 (第 ${page} 页, 共 ${Math.ceil(filteredCommandList.length / size)} 页)\n`),
     Structs.text(`Powered by ATRI v${atriVersion}\n`),
     ...(
       showHelp
@@ -94,22 +94,28 @@ export async function handleCommandList(options: handleCommandListOptions) {
   ]
 }
 
-export async function handleInteractiveHelp(context: MessageHandler['message'], logger: ATRI['logger'], bot: Bot, atri: ATRI) {
+export async function handleInteractiveHelp(context: MessageHandler['message'], bot: Bot, atri: ATRI) {
   await bot.sendMsg(context, [
     Structs.text('请选择要查看帮助的命令(回复序号即可):\n'),
     Structs.text('1. 命令列表\n'),
     Structs.text('2. 查找命令'),
   ])
 
-  const response = await bot.useMessage(context)
-  if (!response) {
-    return
-  }
+  let choice: number
+  while (true) {
+    const response = await bot.useMessage(context)
+    if (!response) {
+      return
+    }
 
-  const choice = Number.parseInt(response.raw_message.trim())
-  if (Number.isNaN(choice) || choice < 1 || choice > 2) {
-    await bot.sendMsg(context, '无效的选择, 请重新输入~')
-    return await handleInteractiveHelp(context, logger, bot, atri)
+    const inputChoice = Number.parseInt(response.raw_message.trim())
+    if (Number.isNaN(inputChoice) || inputChoice < 1 || inputChoice > 2) {
+      await bot.sendMsg(context, '无效的选择, 请重新输入~')
+      continue
+    }
+
+    choice = inputChoice
+    break
   }
 
   const isAdmin = bot.config.adminId.includes(context.user_id)
@@ -186,11 +192,11 @@ export async function handleInteractiveHelp(context: MessageHandler['message'], 
 export const help = plugin.command(/help|帮助/)
   .priority(9999)
   .commander(helpCommander)
-  .callback(async ({ context, options, bot, atri, logger }) => {
+  .callback(async ({ context, options, bot, atri }) => {
     const { page, size, command, interactive } = options
 
     if (interactive) {
-      await handleInteractiveHelp(context, logger, bot, atri)
+      await handleInteractiveHelp(context, bot, atri)
       return
     }
 

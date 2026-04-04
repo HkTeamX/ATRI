@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/plugin-help",
   "type": "module",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "help plugin for atri framework",
   "author": "huan_kong",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
-    "@atri-bot/core": "^2.4.0",
+    "@atri-bot/core": "^2.4.1",
     "node-napcat-ts": "^0.4.24",
     "yargs": "^18.0.0"
   },

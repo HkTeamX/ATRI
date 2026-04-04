@@ -450,17 +450,17 @@ export class Bot {
   /**
    * 监听下一次消息事件, 用于实现连续对话功能
    */
-  async useMessage<T extends keyof MessageHandler>(
-    context: ManualContext,
+  async useMessage<T extends MessageHandler[keyof MessageHandler]>(
+    context: T,
     options: UseMessageOptions = {},
-  ): Promise<null | MessageHandler[T]> {
+  ): Promise<null | T> {
     const identifier = this.getIdentifier(context)
     this.isInConversation.add(identifier)
 
     return new Promise((resolve, reject) => {
       let timeoutId: NodeJS.Timeout | number = 0
 
-      const handler = (ctx: MessageHandler[T]) => {
+      const handler = (ctx: T) => {
         this.isInConversation.delete(identifier)
         clearTimeout(timeoutId)
         resolve(ctx)
