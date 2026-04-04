@@ -135,7 +135,7 @@ const plugin = new Plugin<Config>('bot')
 `bot` 提供了常用的消息与用户工具，方便在插件内直接调用：
 
 ::: tip
-`bot` 在使用 `callback` 注册的时候从上下文提取
+`bot` 在使用 `callback/onInstall` 等事件注册的时候从上下文提取
 
 ``` ts
 const plugin = new Plugin('bot')

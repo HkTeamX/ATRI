@@ -53,7 +53,7 @@ export class ATRI {
   version: string
 
   atriVersion = PackageJson.version
-  config: ATRIConfig
+  config: Required<ATRIConfig>
   logger: Logger
   bot: Bot
 
@@ -63,7 +63,7 @@ export class ATRI {
 
   private async removeUselessLogs() {
     const files = await Array.fromAsync(fs.promises.glob(`${this.config.logDir}/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log`))
-    const maxFiles = this.config.maxFiles ?? 30
+    const maxFiles = this.config.maxFiles
 
     if (files.length <= maxFiles)
       return
@@ -77,7 +77,14 @@ export class ATRI {
   }
 
   constructor(config: ATRIConfig) {
-    this.config = { ...config, name: 'ATRI' }
+    this.config = {
+      name: 'ATRI',
+      version: '1.0.0',
+      disableATRIFlag: false,
+      maxFiles: 30,
+      logLevel: LogLevel.INFO,
+      ...config,
+    }
     this.name = config.name ?? 'ATRI'
     this.version = config.version ?? '1.0.0'
     this.logger = createLogger('ATRI', {
@@ -192,6 +199,7 @@ export class ATRI {
         })
         this.logger.INFO(`插件 ${pluginName} 安装函数执行完成`)
       }
+      success = true
     }
     catch (error) {
       this.logger.ERROR(`插件 ${pluginName} 安装失败:`, error)
@@ -369,7 +377,9 @@ export class ATRI {
 
     Object.entries(config).forEach(([key, val]) => {
       doc.set(key, val)
-      this.configs[pluginName][key] = val
+      if (this.configs?.[pluginName]?.[key]) {
+        this.configs[pluginName][key] = val
+      }
     })
 
     await fs.promises.writeFile(configPath, doc.toString())

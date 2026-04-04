@@ -132,6 +132,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -190,6 +191,7 @@ export class Bot {
             options,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -238,6 +240,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
@@ -287,6 +290,7 @@ export class Bot {
             context,
             ...this.createPluginContextHelpers(event.pluginName),
           }, next))
+            .catch(error => this.logger.ERROR(`插件 ${event.pluginName} ${endPoint} 事件处理失败:`, error))
             .finally(() => resolveCurrentStep())
 
           await stepSignal
