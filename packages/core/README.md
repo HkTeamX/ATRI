@@ -9,3 +9,8 @@
 ## 🎉 [更新日志](./CHANGELOG.md)
 
 ## 📑 [开发文档](https://atri.huankong.top)
+
+## ❤️ 感谢
+
+- [Karin](https://github.com/KarinJS/Karin): 借鉴连续对话/配置文件系统
+- [NapCatQQ](https://github.com/NapNeko/NapCatQQ): 提供了对QQ的操控能力
