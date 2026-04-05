@@ -59,6 +59,8 @@ export function useRequest(config?: Options): KyInstance {
   return kyInstance
 }
 
+export type { Input, KyInstance, Options } from 'ky'
+
 export async function downloadFile(
   kyInstance: KyInstance,
   input: Input,
