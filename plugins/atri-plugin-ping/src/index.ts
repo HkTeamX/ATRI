@@ -1,7 +1,6 @@
 import type { SendMessageSegment } from 'node-napcat-ts'
 import { Plugin } from '@atri-bot/core'
 import { Structs } from 'node-napcat-ts'
-import yargs from 'yargs'
 import packageJson from '../package.json' with { type: 'json' }
 
 export interface PingConfig {
@@ -18,15 +17,15 @@ export const plugin = new Plugin<PingConfig>(packageJson.name)
     },
   ])
 
-export const pingCommander = yargs()
-  .option('reply', {
-    alias: 'r',
-    type: 'string',
-    description: '自定义回复内容',
-  })
-
 export const p1ng = plugin.command('p1ng')
-  .commander(pingCommander)
+  .commander(yargs =>
+    yargs()
+      .option('reply', {
+        alias: 'r',
+        type: 'string',
+        description: '自定义回复内容',
+      }),
+  )
   .callback(async ({ context, options, bot, logger, config }, next) => {
     next()
 
@@ -39,7 +38,14 @@ export async function handlePingCommand(reply?: string, defaultReply?: string): 
 }
 
 export const p2ng = plugin.command('p2ng')
-  .commander(pingCommander)
+  .commander(yargs =>
+    yargs()
+      .option('reply', {
+        alias: 'r',
+        type: 'string',
+        description: '自定义回复内容',
+      }),
+  )
   .callback(async ({ context, options, bot, logger, config }, next) => {
     next()
 

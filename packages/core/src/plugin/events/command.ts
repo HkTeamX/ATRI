@@ -77,8 +77,8 @@ export class ATRICommand<TEndPoint extends keyof MessageHandler, TArgv extends A
     return this
   }
 
-  commander<TNewArgv extends Argv>(commander: TNewArgv): ATRICommand<TEndPoint, TNewArgv, TConfig> {
-    this.#commander = commander as unknown as TArgv
+  commander<TNewArgv extends Argv>(commander: (y: typeof yargs) => TNewArgv): ATRICommand<TEndPoint, TNewArgv, TConfig> {
+    this.#commander = commander(yargs) as unknown as TArgv
     return this as unknown as ATRICommand<TEndPoint, TNewArgv, TConfig>
   }
 
