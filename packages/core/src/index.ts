@@ -6,3 +6,5 @@ export * from '@/plugin/events/notice.js'
 export * from '@/plugin/events/request.js'
 export * from '@/plugin/index.js'
 export * from '@/utils.js'
+
+export type { Argv } from 'yargs'
