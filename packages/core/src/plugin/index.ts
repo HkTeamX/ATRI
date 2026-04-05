@@ -15,6 +15,8 @@ export interface PluginContext<TConfig extends object> {
   bot: Bot
   ws: Bot['ws']
   logger: Logger
+  refreshConfig: () => Promise<TConfig>
+  saveConfig: (config?: TConfig) => Promise<void>
 }
 
 export type PluginHandler<TConfig extends object> = (context: PluginContext<TConfig>) => MaybePromise<void>

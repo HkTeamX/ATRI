@@ -1,7 +1,7 @@
 {
   "name": "@atri-bot/core",
   "type": "module",
-  "version": "2.4.2",
+  "version": "2.4.8",
   "description": "QQBOT TypeScript framework",
   "author": "huankong233",
   "license": "MIT",
@@ -22,13 +22,13 @@
   },
   "dependencies": {
     "@huan_kong/logger": "^2.0.4",
+    "@types/yargs": "^17.0.35",
     "fs-extra": "^11.3.4",
     "node-napcat-ts": "^0.4.24",
     "yaml": "^2.8.3",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "@types/yargs": "^17.0.35"
+    "@types/fs-extra": "^11.0.4"
   }
 }

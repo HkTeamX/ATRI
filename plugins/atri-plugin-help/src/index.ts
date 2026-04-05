@@ -2,35 +2,9 @@ import type { ATRI, Bot, CommandEvent } from '@atri-bot/core'
 import type { MessageHandler } from 'node-napcat-ts'
 import { decodeUnicode, Plugin } from '@atri-bot/core'
 import { Structs } from 'node-napcat-ts'
-import yargs from 'yargs'
 import PackageJson from '../package.json' with { type: 'json' }
 
 export const plugin = new Plugin(PackageJson.name)
-
-export const helpCommander = yargs()
-  .option('command', {
-    alias: 'c',
-    type: 'string',
-    description: '显示指定命令的帮助文档',
-  })
-  .option('page', {
-    alias: 'p',
-    type: 'number',
-    description: '页码',
-    default: 1,
-  })
-  .option('size', {
-    alias: 's',
-    type: 'number',
-    description: '每页条数',
-    default: 8,
-  })
-  .option('interactive', {
-    alias: 'i',
-    type: 'boolean',
-    description: '启用交互模式',
-    default: false,
-  })
 
 export interface HandleFindCommandOptions {
   commandList: CommandEvent[]
@@ -191,7 +165,32 @@ export async function handleInteractiveHelp(context: MessageHandler['message'], 
 
 export const help = plugin.command(/help|帮助/)
   .priority(9999)
-  .commander(helpCommander)
+  .commander(yargs =>
+    yargs()
+      .option('command', {
+        alias: 'c',
+        type: 'string',
+        description: '显示指定命令的帮助文档',
+      })
+      .option('page', {
+        alias: 'p',
+        type: 'number',
+        description: '页码',
+        default: 1,
+      })
+      .option('size', {
+        alias: 's',
+        type: 'number',
+        description: '每页条数',
+        default: 8,
+      })
+      .option('interactive', {
+        alias: 'i',
+        type: 'boolean',
+        description: '启用交互模式',
+        default: false,
+      }),
+  )
   .callback(async ({ context, options, bot, atri }) => {
     const { page, size, command, interactive } = options
 

@@ -162,6 +162,23 @@ export class ATRI {
     return this.installPluginByInstance(pluginModule, packageName)
   }
 
+  private createPluginContextHelpers(pluginName: string) {
+    const plugin = this.plugins[pluginName]
+    if (!plugin) {
+      throw new Error(`插件 ${pluginName} 未安装，无法获取配置上下文`)
+    }
+
+    return {
+      atri: this,
+      bot: this.bot,
+      ws: this.bot.ws,
+      config: this.configs[normalizePluginName(pluginName)] ?? {},
+      logger: this.loggers[pluginName],
+      refreshConfig: async () => await this.loadConfig(pluginName, plugin.defaultConfig, true),
+      saveConfig: async (config: any) => await this.saveConfig(pluginName, config),
+    }
+  }
+
   async installPluginByInstance(pluginModule: PluginModule, packageName = '未知模块'): Promise<boolean> {
     let success = false
 
@@ -184,19 +201,13 @@ export class ATRI {
       pluginName = pluginInstance.pluginName
 
       this.loggers[pluginName] = this.logger.clone({ title: pluginName })
-      const config = await this.loadConfig(pluginName, pluginInstance.defaultConfig)
+      await this.loadConfig(pluginName, pluginInstance.defaultConfig)
       this.plugins[pluginName] = pluginInstance
       this.logger.INFO(`插件 ${pluginName} 安装成功`)
 
       // 执行安装函数
       if (pluginInstance.installHandler) {
-        await pluginInstance.installHandler({
-          config,
-          atri: this,
-          bot: this.bot,
-          ws: this.bot.ws,
-          logger: this.loggers[pluginName],
-        })
+        await pluginInstance.installHandler(this.createPluginContextHelpers(pluginName))
         this.logger.INFO(`插件 ${pluginName} 安装函数执行完成`)
       }
       success = true
@@ -283,13 +294,7 @@ export class ATRI {
     // 执行卸载函数
     if (plugin.uninstallHandler) {
       try {
-        await plugin.uninstallHandler({
-          config: this.configs[normalizePluginName(pluginName)],
-          atri: this,
-          bot: this.bot,
-          ws: this.bot.ws,
-          logger: this.loggers[pluginName],
-        })
+        await plugin.uninstallHandler(this.createPluginContextHelpers(pluginName))
         this.logger.INFO(`插件 ${pluginName} 卸载函数执行完成`)
       }
       catch (error) {
