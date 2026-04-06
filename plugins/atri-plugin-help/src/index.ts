@@ -51,7 +51,7 @@ export async function handleCommandList(options: HandleCommandListOptions) {
 
   const paginatedCommandList = filteredCommandList
     .slice((page - 1) * size, page * size)
-    .map((cmdEvent, index) => `${index + 1}. ${decodeUnicode(cmdEvent.trigger.toString())}`)
+    .map((cmdEvent, index) => `${page * (size - 1) + index + 1}. ${decodeUnicode(cmdEvent.trigger.toString())}`)
 
   return [
     Structs.text(`${name} v${version} - 命令列表 (第 ${page} 页, 共 ${Math.ceil(filteredCommandList.length / size)} 页)\n`),
