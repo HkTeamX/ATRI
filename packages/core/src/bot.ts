@@ -83,7 +83,7 @@ export class Bot {
       config: this.atri.configs[normalizePluginName(pluginName)] ?? {},
       logger: this.atri.loggers[pluginName],
       refreshConfig: async () => await this.atri.loadConfig(pluginName, plugin.defaultConfig, true),
-      saveConfig: async (config?: any) => await this.atri.saveConfig(pluginName, config ?? this.atri.configs[normalizePluginName(pluginName)]),
+      saveConfig: async (config?: any) => await this.atri.saveConfig(pluginName, config ?? this.atri.configs[normalizePluginName(pluginName)] ?? {}),
     }
   }
 
