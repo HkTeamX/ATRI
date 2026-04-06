@@ -175,7 +175,7 @@ export class ATRI {
       config: this.configs[normalizePluginName(pluginName)] ?? {},
       logger: this.loggers[pluginName],
       refreshConfig: async () => await this.loadConfig(pluginName, plugin.defaultConfig, true),
-      saveConfig: async (config: any) => await this.saveConfig(pluginName, config),
+      saveConfig: async (config?: any) => await this.saveConfig(pluginName, config ?? this.configs[normalizePluginName(pluginName)] ?? {}),
     }
   }
 
